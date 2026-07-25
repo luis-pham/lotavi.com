@@ -1,0 +1,12 @@
+{
+  "voice.connecting": "Đang kết nối với trợ lý…",
+  "voice.ready": "Sẵn sàng",
+  "voice.listening": "Tôi đang nghe",
+  "voice.understanding": "Đang hiểu yêu cầu…",
+  "voice.searching": "Đang tìm thông tin…",
+  "voice.speaking": "Trợ lý đang trả lời",
+  "voice.confirmation": "Vui lòng xác nhận yêu cầu",
+  "voice.reconnecting": "Đang kết nối lại…",
+  "voice.networkWeak": "Kết nối không ổn định",
+  "voice.fallbackText": "Chuyển sang nhắn tin"
+}

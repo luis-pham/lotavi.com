@@ -1,0 +1,12 @@
+{
+  "voice.connecting": "Connecting to the assistant\u2026",
+  "voice.ready": "Ready",
+  "voice.listening": "I'm listening",
+  "voice.understanding": "Understanding your request\u2026",
+  "voice.searching": "Finding information\u2026",
+  "voice.speaking": "Assistant is responding",
+  "voice.confirmation": "Please confirm this request",
+  "voice.reconnecting": "Reconnecting\u2026",
+  "voice.networkWeak": "Connection is unstable",
+  "voice.fallbackText": "Switch to text"
+}

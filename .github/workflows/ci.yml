@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: lotiva
+          POSTGRES_PASSWORD: lotiva
+          POSTGRES_DB: lotiva
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U lotiva"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://lotiva:lotiva@localhost:5432/lotiva
+      REDIS_URL: redis://localhost:6379
+      SESSION_SECRET: ci-test-secret-not-for-production-32c
+      LOTIVA_STORE: postgres
+      ALLOW_MEMORY_STORE: "false"
+      ALLOW_DEMO_SEED: "false"
+      VOICE_ENABLED: "false"
+      RUN_PG_TESTS: "1"
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.11.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build:packages
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm --filter @lotiva/infrastructure db:migrate
+      - run: pnpm --filter @lotiva/infrastructure db:seed
+      - run: pnpm test
+      - name: Config fail-fast negative check
+        run: |
+          set +e
+          NODE_ENV=production LOTIVA_STORE=memory node -e "import('@lotiva/contracts').then(m=>m.parseLotivaEnv(process.env)).catch(e=>{console.error(e.message); process.exit(1)})"
+          test $? -ne 0
+      - name: Embedding stub contract
+        working-directory: apps/embedding-service
+        run: |
+          python -m pip install -q fastapi uvicorn pydantic httpx pytest
+          EMBEDDING_BACKEND=stub EMBEDDING_ALLOW_STUB=true NODE_ENV=test python -m pytest -q
+      - run: pnpm build

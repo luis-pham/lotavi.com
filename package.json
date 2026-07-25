@@ -1,0 +1,30 @@
+{
+  "name": "lotiva",
+  "private": true,
+  "packageManager": "pnpm@11.11.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev --parallel",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "vitest run",
+    "db:generate": "pnpm --filter @lotiva/infrastructure db:generate",
+    "db:migrate": "pnpm --filter @lotiva/infrastructure db:migrate",
+    "db:seed": "pnpm --filter @lotiva/infrastructure db:seed",
+    "build:packages": "pnpm --filter @lotiva/contracts --filter @lotiva/domain --filter @lotiva/application --filter @lotiva/design-tokens --filter @lotiva/design-system --filter @lotiva/ui --filter @lotiva/infrastructure build",
+    "dev:api": "pnpm build:packages && pnpm --filter @lotiva/api dev",
+    "knowledge:reembed": "pnpm --filter @lotiva/infrastructure knowledge:reembed",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.30",
+    "prettier": "^3.5.3",
+    "tsx": "4.23.1",
+    "turbo": "^2.5.4",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.3"
+  }
+}

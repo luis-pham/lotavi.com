@@ -1,0 +1,88 @@
+[
+  {
+    "id": "vn-diacritics",
+    "query": "Hồ bơi ở đâu?",
+    "locale": "vi-VN",
+    "expectAnswerable": true,
+    "criticality": "normal"
+  },
+  {
+    "id": "vn-no-diacritics",
+    "query": "Ho boi o dau?",
+    "locale": "vi-VN",
+    "expectAnswerable": true,
+    "criticality": "normal"
+  },
+  {
+    "id": "vn-synonym",
+    "query": "Bể bơi ở đâu?",
+    "locale": "vi-VN",
+    "expectAnswerable": true,
+    "criticality": "normal"
+  },
+  {
+    "id": "en-pool",
+    "query": "Swimming pool location?",
+    "locale": "en-US",
+    "expectAnswerable": true,
+    "criticality": "normal"
+  },
+  {
+    "id": "en-short",
+    "query": "Pool?",
+    "locale": "en-US",
+    "expectAnswerable": true,
+    "criticality": "normal"
+  },
+  {
+    "id": "vn-partial",
+    "query": "ho boi mo cua",
+    "locale": "vi-VN",
+    "expectAnswerable": true,
+    "criticality": "normal"
+  },
+  {
+    "id": "breakfast-en",
+    "query": "Breakfast time?",
+    "locale": "en-US",
+    "expectAnswerable": false,
+    "criticality": "normal",
+    "note": "schedule is not in knowledge chunks by default"
+  },
+  {
+    "id": "unanswerable-helicopter",
+    "query": "Khách sạn có trực thăng riêng không?",
+    "locale": "vi-VN",
+    "expectAnswerable": false,
+    "criticality": "normal"
+  },
+  {
+    "id": "unanswerable-drive",
+    "query": "Can I drive the cruise ship?",
+    "locale": "en-US",
+    "expectAnswerable": false,
+    "criticality": "normal"
+  },
+  {
+    "id": "unanswerable-phone",
+    "query": "What is the captain's private phone number?",
+    "locale": "en-US",
+    "expectAnswerable": false,
+    "criticality": "critical"
+  },
+  {
+    "id": "zh-pool",
+    "query": "游泳池在哪里",
+    "locale": "zh-CN",
+    "expectAnswerable": false,
+    "criticality": "normal",
+    "note": "cross-language without synonym may be unanswerable"
+  },
+  {
+    "id": "flight-price",
+    "query": "Giá vé máy bay đi Hà Nội?",
+    "locale": "vi-VN",
+    "expectAnswerable": false,
+    "criticality": "normal"
+  }
+]

@@ -1,0 +1,99 @@
+services:
+  caddy:
+    image: caddy:2.9-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      - web
+      - api
+
+  web:
+    build:
+      context: ../..
+      dockerfile: apps/web/Dockerfile
+    environment:
+      NEXT_PUBLIC_API_URL: http://api:4000
+    expose:
+      - "3000"
+
+  api:
+    build:
+      context: ../..
+      dockerfile: apps/api/Dockerfile
+    environment:
+      LOTIVA_STORE: postgres
+      API_PORT: "4000"
+      REDIS_URL: redis://redis:6379
+      DATABASE_URL: postgres://lotiva:lotiva@postgres:5432/lotiva
+      NODE_ENV: production
+      SESSION_SECRET: compose-dev-secret-must-be-32chars-min
+      VOICE_ENABLED: "false"
+      ALLOW_DEMO_SEED: "false"
+      ALLOW_MEMORY_STORE: "false"
+      EMBEDDING_SERVICE_URL: http://embedding-service:8081
+    expose:
+      - "4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    entrypoint: ["/bin/sh", "/app/scripts/api-entrypoint.sh"]
+
+  worker:
+    build:
+      context: ../..
+      dockerfile: apps/worker/Dockerfile
+    environment:
+      NODE_ENV: production
+      LOTIVA_STORE: postgres
+      REDIS_URL: redis://redis:6379
+      DATABASE_URL: postgres://lotiva:lotiva@postgres:5432/lotiva
+      EMBEDDING_SERVICE_URL: http://embedding-service:8081
+      ALLOW_MEMORY_STORE: "false"
+      VOICE_ENABLED: "false"
+    depends_on:
+      - redis
+      - embedding-service
+      - postgres
+
+  embedding-service:
+    build:
+      context: ../../apps/embedding-service
+    expose:
+      - "8081"
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: lotiva
+      POSTGRES_PASSWORD: lotiva
+      POSTGRES_DB: lotiva
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    # not published in production; local only for tooling:
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lotiva -d lotiva"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  prometheus:
+    image: prom/prometheus:v3.2.1
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+
+volumes:
+  pgdata:

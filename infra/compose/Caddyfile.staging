@@ -1,0 +1,13 @@
+# Staging TLS (requires DNS for staging.lotavi.com + api.staging.lotavi.com)
+# Usage: mount as Caddyfile when DNS/ACME is ready.
+# Staging must remain noindex (see apps/web robots.ts).
+
+staging.lotavi.com {
+  encode gzip
+  reverse_proxy web:3000
+}
+
+api.staging.lotavi.com {
+  encode gzip
+  reverse_proxy api:4000
+}

@@ -1,0 +1,14 @@
+:root {
+  --lotiva-color-primary: #0f3d2e;
+  --lotiva-color-accent: #c4a35a;
+  --lotiva-color-bg: #f7f4ef;
+  --lotiva-color-text: #1a1a1a;
+  --lotiva-font-display: "Cormorant Garamond", Georgia, serif;
+  --lotiva-font-body: "Source Sans 3", "Segoe UI", sans-serif;
+  --lotiva-radius: 8px;
+  --lotiva-space-1: 4px;
+  --lotiva-space-2: 8px;
+  --lotiva-space-3: 16px;
+  --lotiva-space-4: 24px;
+  --lotiva-space-5: 40px;
+}

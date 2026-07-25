@@ -1,0 +1,19 @@
+{
+  auto_https off
+}
+
+:80 {
+  @api path /api/* /health /ready /metrics
+  handle @api {
+    reverse_proxy api:4000
+  }
+  handle {
+    reverse_proxy web:3000
+  }
+}
+
+# Production (enable when DNS points here):
+# - infra/compose/Caddyfile.lotavi.com
+# - infra/compose/Caddyfile.lotavi.vn  (301 → https://lotavi.com/vi{uri})
+#
+# Legacy lotiva.vn hosts should also 301 to lotavi.com/vi once DNS is controlled.

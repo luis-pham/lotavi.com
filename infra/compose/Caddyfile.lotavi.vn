@@ -1,0 +1,13 @@
+# Vietnam defensive/local domain — redirect only, do not serve duplicate content.
+# Runtime verification is BLOCKED until DNS + TLS for lotavi.vn are provisioned.
+#
+# Behavior:
+#   https://lotavi.vn/*       → 301 https://lotavi.com/vi/*
+#   https://www.lotavi.vn/*   → 301 https://lotavi.com/vi/*
+#
+# Open-redirect safe: host-bound site blocks; URI path is preserved under /vi.
+
+lotavi.vn, www.lotavi.vn {
+  # Permanent redirect into canonical Vietnamese marketing URLs
+  redir https://lotavi.com/vi{uri} permanent
+}

@@ -1,0 +1,183 @@
+:root {
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background:
+    radial-gradient(1200px 600px at 10% -10%, rgba(196, 163, 90, 0.18), transparent 55%),
+    radial-gradient(900px 500px at 90% 0%, rgba(15, 61, 46, 0.12), transparent 50%),
+    var(--lotiva-color-bg);
+  color: var(--lotiva-color-text);
+  font-family: var(--lotiva-font-body);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--lotiva-font-display);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.shell {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px 20px 64px;
+}
+
+.card-free {
+  padding: 8px 0;
+}
+
+.muted {
+  opacity: 0.72;
+}
+
+.row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+input,
+textarea,
+select {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid rgba(26, 26, 26, 0.15);
+  border-radius: var(--lotiva-radius);
+  background: rgba(255, 255, 255, 0.7);
+  font: inherit;
+}
+
+button {
+  font: inherit;
+}
+
+.nav {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin: 20px 0 28px;
+  font-size: 0.95rem;
+}
+
+.nav a {
+  border-bottom: 1px solid transparent;
+}
+
+.nav a:hover {
+  border-bottom-color: var(--lotiva-color-accent);
+}
+
+.bubble {
+  padding: 12px 14px;
+  border-radius: var(--lotiva-radius);
+  background: rgba(255, 255, 255, 0.65);
+  margin-bottom: 10px;
+  white-space: pre-wrap;
+}
+
+.bubble.assistant {
+  border-left: 3px solid var(--lotiva-color-primary);
+}
+
+.bubble.guest {
+  border-left: 3px solid var(--lotiva-color-accent);
+}
+
+.marketing-header {
+  margin-bottom: 8px;
+}
+
+.marketing-brand-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.lang-switcher ul {
+  display: flex;
+  gap: 12px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 0.95rem;
+}
+
+.lang-switcher a {
+  border-bottom: 1px solid transparent;
+}
+
+.lang-switcher a:hover,
+.lang-switcher a:focus-visible {
+  border-bottom-color: var(--lotiva-color-accent);
+  outline: none;
+}
+
+.lang-switcher a:focus-visible {
+  box-shadow: 0 0 0 2px var(--lotiva-color-accent);
+  border-radius: 2px;
+}
+
+.lang-active {
+  font-weight: 600;
+  border-bottom: 1px solid var(--lotiva-color-primary);
+}
+
+.feature-list {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0 0;
+  display: grid;
+  gap: 16px;
+}
+
+.feature-list h3 {
+  margin: 0 0 4px;
+  font-size: 1.15rem;
+}
+
+.marketing-footer {
+  margin-top: 48px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(26, 26, 26, 0.1);
+  font-size: 0.9rem;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.sr-only-focusable:focus {
+  position: static;
+  width: auto;
+  height: auto;
+  margin: 0;
+  clip: auto;
+  white-space: normal;
+}
+
