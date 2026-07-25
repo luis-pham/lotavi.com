@@ -4,13 +4,16 @@ document_id: "DOM-VOICE-001"
 version: "1.0.0"
 status: "approved"
 owners: ["Product", "Engineering", "Design"]
-last_updated: "2026-07-25"
+last_updated: "2026-07-26"
 depends_on: []
-source_of_truth_for: ["voice state machine"]
+source_of_truth_for: ["voice state machine — domain target"]
 implemented_by: []
 reviewed_by: []
 ---
 
+> **Historical architecture note.**  
+> Domain states below remain useful as a UX/runtime model. Persistence and ownership are implemented; **provider audio and barge-in are not production-verified**.  
+> **Current source of truth:** [docs/voice/current-status.md](../../docs/voice/current-status.md), [docs/voice/architecture.md](../../docs/voice/architecture.md).
 
 # Voice runtime state
 

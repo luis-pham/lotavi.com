@@ -46,11 +46,14 @@ Code không được xem là nguồn sự thật nếu trái với tài liệu a
 - backup/restore
 
 ### Thay đổi voice
-Đọc:
+**Canonical (prefer):** `docs/voice/README.md`, `docs/voice/current-status.md`, `docs/voice/architecture.md`, `docs/architecture/adr/ADR-direct-gemini-live-browser.md`.
+
+Historical pack (may describe obsolete server relay — read banners):
 - `04-architecture/voice-provider-architecture.md`
 - `05-domain/voice-session.md`
 - `07-contracts/voice-events.md`
 - `08-ai/gemini-live-adapter.md`
+- `adr/ADR-0003-gemini-live.md`
 - `10-testing/contract-tests.md`
 
 ### Thay đổi AI/RAG

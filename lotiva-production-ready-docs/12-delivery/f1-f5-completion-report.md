@@ -4,8 +4,13 @@ document_id: "DEL-F1F5-001"
 version: "1.0.0"
 status: "approved"
 owners: ["Engineering"]
-last_updated: "2026-07-25"
+last_updated: "2026-07-26"
 ---
+
+> **Historical architecture note (voice / F3).**  
+> “Voice Gateway REST + WebSocket” did **not** deliver a working Gemini media relay. Adapter was placeholder-shaped.  
+> Later V0/V1/V1.5 added safety + direct spike code; real provider smoke remains **BLOCKED**.  
+> **Current source of truth:** [docs/voice/current-status.md](../../docs/voice/current-status.md).
 
 ## Summary
 Implemented end-to-end vertical slices for F1–F5 on the monorepo foundation using memory store + API/Web UI, with Postgres schema/RLS ready for staging.
@@ -20,11 +25,12 @@ Implemented end-to-end vertical slices for F1–F5 on the monorepo foundation us
 - Guest text chat grounded on approved chunks
 - Schedules + announcements APIs + Guest tabs
 
-## F3 Voice
+## F3 Voice (control-plane slice only — not media-verified)
 - Canonical voice events (`@lotiva/contracts`)
-- Voice Gateway REST + WebSocket
-- Gemini Live adapter boundary (fallback text without API key)
+- Voice REST + ownership-gated WebSocket (**not** a working Gemini audio relay)
+- Gemini Live adapter boundary / placeholder (text fallback when voice off)
 - Contract test: no provider SDK leak
+- **Not claimed:** real mic↔Gemini Live, transcripts, barge-in, RAG/write tools
 
 ## F4 Service
 - Prepare → confirm ticket (no create without confirm)

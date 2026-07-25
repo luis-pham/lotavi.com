@@ -309,6 +309,68 @@ export interface PromptRepository {
   createVersion(profileId: string, body: string): Promise<{ id: string; version: number }>;
 }
 
+export type VoiceSessionStatus =
+  | "created"
+  | "token_issued"
+  | "connecting"
+  | "active"
+  | "disconnecting"
+  | "ended"
+  | "failed"
+  | "expired"
+  | "abandoned"
+  | "initializing"
+  | "direct_minted";
+
+export type VoiceSessionRecord = {
+  id: string;
+  tenantId: string;
+  propertyId: string;
+  guestSessionId: string;
+  conversationId: string;
+  provider: string;
+  transport: "relay" | "direct" | "off";
+  status: string;
+  revision: number;
+  lastHeartbeatAt: Date | null;
+  terminationReason: string | null;
+  createdAt: Date;
+  endedAt: Date | null;
+};
+
+export interface VoiceSessionRepository {
+  create(input: {
+    id: string;
+    tenantId: string;
+    propertyId: string;
+    guestSessionId: string;
+    conversationId: string;
+    provider?: string;
+    transport: "relay" | "direct" | "off";
+    status?: string;
+  }): Promise<VoiceSessionRecord>;
+  get(id: string, tenantId: string): Promise<VoiceSessionRecord | null>;
+  /** Ownership check: session belongs to guest and is not ended. */
+  assertOwnedByGuest(
+    id: string,
+    guestSessionId: string,
+    tenantId: string,
+  ): Promise<VoiceSessionRecord | null>;
+  countOpenForProperty(propertyId: string, tenantId: string): Promise<number>;
+  updateStatus(input: {
+    id: string;
+    tenantId: string;
+    status: string;
+    revision?: number;
+    endedAt?: Date | null;
+    providerSessionRef?: string | null;
+    lastHeartbeatAt?: Date | null;
+    terminationReason?: string | null;
+  }): Promise<void>;
+  heartbeat(id: string, tenantId: string, guestSessionId: string): Promise<boolean>;
+  abandonStale(olderThan: Date): Promise<number>;
+}
+
 export type LotivaRepos = {
   qr: QrRepository;
   sessions: GuestSessionRepository;
@@ -326,6 +388,7 @@ export type LotivaRepos = {
   prompts: PromptRepository;
   passwordReset: PasswordResetRepository;
   ticketOutbox: TicketOutboxRepository;
+  voiceSessions: VoiceSessionRepository;
 };
 
 export interface ScheduleRepository {

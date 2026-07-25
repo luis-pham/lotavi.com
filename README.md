@@ -1,15 +1,16 @@
-# Lotiva (lotiva.vn)
+# Lotavi (lotavi.com)
 
-Guest Portal QR + AI voice/text for hotels / resorts / cruises.
+Guest Portal QR + AI text (and future voice) for hotels / resorts / cruises.
 
-- Product docs: [`lotiva-production-ready-docs/`](./lotiva-production-ready-docs/)
+- **Voice (canonical):** [`docs/voice/README.md`](./docs/voice/README.md) — voice is **disabled**; no production rollout
+- Product docs (historical package name retained): [`lotiva-production-ready-docs/`](./lotiva-production-ready-docs/)
 - Production readiness: [`docs/production-readiness/`](./docs/production-readiness/)
-- Final status: [`docs/production-readiness/final-verification-report.md`](./docs/production-readiness/final-verification-report.md)
+- Text/pilot status: [`docs/production-readiness/final-verification-report.md`](./docs/production-readiness/final-verification-report.md)
 
 ## Stack
 
 - `apps/web` — Next.js (Guest / Staff / Admin)
-- `apps/api` — Fastify REST + Voice WebSocket + staff SSE
+- `apps/api` — Fastify REST + voice control-plane routes (WS ownership gate; not a working Gemini media relay) + staff SSE
 - `apps/worker` — BullMQ (memory only with explicit `ALLOW_MEMORY_STORE`)
 - `apps/embedding-service` — FastAPI embedding stub (swap EmbeddingGemma later)
 - `packages/*` — domain, application, infrastructure, contracts, design system
@@ -53,8 +54,9 @@ Local demo accounts are seeded only for development. **Never enable `ALLOW_DEMO_
 
 - `NODE_ENV=production|staging` + `LOTIVA_STORE=memory` → process refuses to start
 - `ALLOW_DEMO_SEED` forbidden in staging/production
-- `VOICE_ENABLED=true` requires `GEMINI_API_KEY` in staging/production
-- Prefer `VOICE_ENABLED=false` until real Gemini Live verification completes
+- Keep `VOICE_ENABLED=false`, `VOICE_TRANSPORT=off`, `DIRECT_GEMINI_ENABLED=false` until gates in [`docs/voice/production-gates.md`](./docs/voice/production-gates.md) pass
+- `VOICE_ENABLED=true` requires `GEMINI_API_KEY` in staging/production; production **rejects** `DIRECT_GEMINI_ENABLED=true`
+- Lotavi is not a working Gemini audio media relay; see [`docs/voice/architecture.md`](./docs/voice/architecture.md)
 
 ## Compose
 

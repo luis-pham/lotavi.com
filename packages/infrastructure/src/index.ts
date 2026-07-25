@@ -5,4 +5,5 @@ export * from "./memory/store.js";
 export * from "./redis.js";
 export * from "./redis-rate-limit.js";
 export * from "./voice/gemini-live-adapter.js";
+export * from "./voice/ephemeral-token.js";
 export * from "./embedding/client.js";

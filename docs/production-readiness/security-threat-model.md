@@ -10,7 +10,9 @@
 | Guest cookie forgery | Signed cookies + SESSION_SECRET | No server-side session revocation store for staff |
 | Arbitrary ticket status | Domain transition + normalize reject | — |
 | Prompt injection via knowledge | Approved-only retrieval; grounded concat | No LLM sanitizer yet (retrieval is extractive) |
-| Voice session hijack | Voice disabled by default | WS auth incomplete when voice enabled |
+| Voice session hijack | Voice disabled by default; ownership checks on mint/WS/heartbeat when enabled | Direct mode token theft/replay; see [`docs/voice/security-boundary.md`](../voice/security-boundary.md) |
+| Ephemeral token abuse / client-forged tools | Mint rate limits; tools not implemented; client config ignored | Provider smoke not yet run |
+| Fake voice usage / billing fraud | Client metrics not billing-authoritative; reconciliation not started | Do not bill from browser events |
 | Staff privilege escalation | Role checks on staff/admin routes | Cookie role not reloaded every request for mutations |
 | XSS | React defaults; API JSON | Admin content should remain trusted-operator only |
 | SSRF via ingestion | No remote crawl in pilot | Future ingestion needs allowlist |

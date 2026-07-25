@@ -12,15 +12,9 @@ import {
 } from "@lotiva/application";
 import { transitionTicket } from "@lotiva/application";
 import { getAppContext } from "../app-context.js";
+import { requireActiveGuest, type GuestCookie } from "../lib/guest-auth.js";
 import { bumpMetric, getCorrelationId, sendError } from "../plugins/observability.js";
 import { publishStaffTicketEvent } from "./realtime.js";
-
-type GuestCookie = {
-  sessionId: string;
-  tenantId: string;
-  propertyId: string;
-  roomId: string;
-};
 
 export async function registerGuestRoutes(app: FastifyInstance) {
   const cookieName = process.env.GUEST_COOKIE_NAME ?? "lotiva_guest";
@@ -80,7 +74,7 @@ export async function registerGuestRoutes(app: FastifyInstance) {
 
   app.get("/api/v1/guest/me", async (req, reply) => {
     const ctx = getAppContext();
-    const guest = await requireGuest(req, cookieName);
+    const guest = await requireActiveGuest(req, cookieName);
     if (!guest.ok) return sendError(reply, req, guest.status, guest.code, guest.message);
     const session = guest.session;
     const theme = await ctx.repos.themes.getPublished(guest.cookie.propertyId);
@@ -97,7 +91,7 @@ export async function registerGuestRoutes(app: FastifyInstance) {
   });
 
   app.patch("/api/v1/guest/locale", async (req, reply) => {
-    const guest = await requireGuest(req, cookieName);
+    const guest = await requireActiveGuest(req, cookieName);
     if (!guest.ok) return sendError(reply, req, guest.status, guest.code, guest.message);
     const body = req.body as { locale?: string };
     if (!body.locale || !/^[a-z]{2}(-[A-Za-z]{2})?$/.test(body.locale)) {
@@ -109,7 +103,7 @@ export async function registerGuestRoutes(app: FastifyInstance) {
 
   app.post("/api/v1/guest/chat", async (req, reply) => {
     const ctx = getAppContext();
-    const guest = await requireGuest(req, cookieName);
+    const guest = await requireActiveGuest(req, cookieName);
     if (!guest.ok) return sendError(reply, req, guest.status, guest.code, guest.message);
     const parsed = SendChatRequestSchema.safeParse(req.body);
     if (!parsed.success) return sendError(reply, req, 400, "VALIDATION", "Invalid body");
@@ -138,7 +132,7 @@ export async function registerGuestRoutes(app: FastifyInstance) {
 
   app.get("/api/v1/guest/schedules", async (req, reply) => {
     const ctx = getAppContext();
-    const guest = await requireGuest(req, cookieName);
+    const guest = await requireActiveGuest(req, cookieName);
     if (!guest.ok) return sendError(reply, req, guest.status, guest.code, guest.message);
     const items = await ctx.repos.schedules.listActive(guest.cookie.propertyId, guest.cookie.tenantId);
     return {
@@ -152,7 +146,7 @@ export async function registerGuestRoutes(app: FastifyInstance) {
 
   app.get("/api/v1/guest/announcements", async (req, reply) => {
     const ctx = getAppContext();
-    const guest = await requireGuest(req, cookieName);
+    const guest = await requireActiveGuest(req, cookieName);
     if (!guest.ok) return sendError(reply, req, guest.status, guest.code, guest.message);
     const items = await ctx.repos.announcements.listActive(guest.cookie.propertyId, guest.cookie.tenantId);
     return {
@@ -165,7 +159,7 @@ export async function registerGuestRoutes(app: FastifyInstance) {
 
   app.post("/api/v1/guest/tickets/prepare", async (req, reply) => {
     const ctx = getAppContext();
-    const guest = await requireGuest(req, cookieName);
+    const guest = await requireActiveGuest(req, cookieName);
     if (!guest.ok) return sendError(reply, req, guest.status, guest.code, guest.message);
     const parsed = PrepareTicketRequestSchema.safeParse(req.body);
     if (!parsed.success) return sendError(reply, req, 400, "VALIDATION", "Invalid body");
@@ -181,7 +175,7 @@ export async function registerGuestRoutes(app: FastifyInstance) {
 
   app.post("/api/v1/guest/tickets/confirm", async (req, reply) => {
     const ctx = getAppContext();
-    const guest = await requireGuest(req, cookieName);
+    const guest = await requireActiveGuest(req, cookieName);
     if (!guest.ok) return sendError(reply, req, guest.status, guest.code, guest.message);
     const parsed = ConfirmTicketRequestSchema.safeParse(req.body);
     if (!parsed.success) return sendError(reply, req, 400, "VALIDATION", "Invalid body");
@@ -238,7 +232,7 @@ export async function registerGuestRoutes(app: FastifyInstance) {
 
   app.post("/api/v1/guest/tickets/:id/confirm-completion", async (req, reply) => {
     const ctx = getAppContext();
-    const guest = await requireGuest(req, cookieName);
+    const guest = await requireActiveGuest(req, cookieName);
     if (!guest.ok) return sendError(reply, req, guest.status, guest.code, guest.message);
     const { id } = req.params as { id: string };
     const ticket = await ctx.repos.tickets.get(id, guest.cookie.tenantId);
@@ -269,7 +263,7 @@ export async function registerGuestRoutes(app: FastifyInstance) {
 
   app.post("/api/v1/guest/tickets/:id/reopen", async (req, reply) => {
     const ctx = getAppContext();
-    const guest = await requireGuest(req, cookieName);
+    const guest = await requireActiveGuest(req, cookieName);
     if (!guest.ok) return sendError(reply, req, guest.status, guest.code, guest.message);
     const { id } = req.params as { id: string };
     const ticket = await ctx.repos.tickets.get(id, guest.cookie.tenantId);
@@ -300,7 +294,7 @@ export async function registerGuestRoutes(app: FastifyInstance) {
 
   app.get("/api/v1/guest/tickets", async (req, reply) => {
     const ctx = getAppContext();
-    const guest = await requireGuest(req, cookieName);
+    const guest = await requireActiveGuest(req, cookieName);
     if (!guest.ok) return sendError(reply, req, guest.status, guest.code, guest.message);
     const items = await ctx.repos.tickets.listForGuestSession(
       guest.cookie.sessionId,
@@ -310,64 +304,4 @@ export async function registerGuestRoutes(app: FastifyInstance) {
       items: items.map((t) => ({ ...t, createdAt: t.createdAt.toISOString() })),
     };
   });
-}
-
-function readGuest(
-  req: {
-    cookies?: Partial<Record<string, string>>;
-    unsignCookie?: (value: string) => { valid: boolean; value: string | null };
-  },
-  cookieName: string,
-): GuestCookie | null {
-  const raw = req.cookies?.[cookieName];
-  if (!raw) return null;
-  try {
-    let payload = raw;
-    if (typeof req.unsignCookie === "function") {
-      const unsigned = req.unsignCookie(raw);
-      if (!unsigned.valid || !unsigned.value) return null;
-      payload = unsigned.value;
-    }
-    return JSON.parse(payload) as GuestCookie;
-  } catch {
-    return null;
-  }
-}
-
-async function requireGuest(
-  req: {
-    cookies?: Partial<Record<string, string>>;
-    unsignCookie?: (value: string) => { valid: boolean; value: string | null };
-  },
-  cookieName: string,
-): Promise<
-  | {
-      ok: true;
-      cookie: GuestCookie;
-      session: NonNullable<Awaited<ReturnType<ReturnType<typeof getAppContext>["repos"]["sessions"]["get"]>>>;
-    }
-  | { ok: false; status: number; code: string; message: string }
-> {
-  const cookie = readGuest(req, cookieName);
-  if (!cookie) {
-    return { ok: false, status: 401, code: "GUEST_UNAUTHORIZED", message: "No guest session" };
-  }
-  const ctx = getAppContext();
-  const session = await ctx.repos.sessions.get(cookie.sessionId);
-  if (!session) {
-    return { ok: false, status: 401, code: "GUEST_UNAUTHORIZED", message: "Session expired" };
-  }
-  if (session.expiresAt.getTime() < Date.now()) {
-    return { ok: false, status: 401, code: "GUEST_EXPIRED", message: "Guest session expired" };
-  }
-  const qrOk = await ctx.repos.qr.isActive(session.qrContextId, session.tenantId);
-  if (!qrOk) {
-    return {
-      ok: false,
-      status: 401,
-      code: "QR_REVOKED",
-      message: "Guest access token revoked or expired",
-    };
-  }
-  return { ok: true, cookie, session };
 }

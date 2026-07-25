@@ -810,5 +810,99 @@ export function createMemoryRepos(db: MemoryDb): LotivaRepos {
         return { id, version };
       },
     },
+    voiceSessions: {
+      async create(input) {
+        const now = new Date();
+        const row = {
+          id: input.id,
+          tenantId: input.tenantId,
+          propertyId: input.propertyId,
+          guestSessionId: input.guestSessionId,
+          conversationId: input.conversationId,
+          provider: input.provider ?? "gemini_live",
+          transport: input.transport,
+          status: input.status ?? "created",
+          revision: 0,
+          lastHeartbeatAt: now as Date | null,
+          terminationReason: null as string | null,
+          createdAt: now,
+          endedAt: null as Date | null,
+        };
+        const list =
+          ((db as MemoryDb & { voiceSessions?: typeof row[] }).voiceSessions ??= []);
+        list.push(row);
+        return { ...row };
+      },
+      async get(id, tenantId) {
+        const list =
+          ((db as MemoryDb & { voiceSessions?: Array<Record<string, unknown>> }).voiceSessions ??=
+            []);
+        const row = list.find((v) => v.id === id && v.tenantId === tenantId);
+        if (!row) return null;
+        return row as import("@lotiva/application").VoiceSessionRecord;
+      },
+      async assertOwnedByGuest(id, guestSessionId, tenantId) {
+        const row = await this.get(id, tenantId);
+        if (!row || row.guestSessionId !== guestSessionId || row.endedAt) return null;
+        return row;
+      },
+      async countOpenForProperty(propertyId, tenantId) {
+        const list =
+          ((db as MemoryDb & { voiceSessions?: Array<Record<string, unknown>> }).voiceSessions ??=
+            []);
+        const closed = new Set(["ended", "failed", "expired", "abandoned"]);
+        return list.filter(
+          (v) =>
+            v.propertyId === propertyId &&
+            v.tenantId === tenantId &&
+            !v.endedAt &&
+            !closed.has(String(v.status)),
+        ).length;
+      },
+      async updateStatus(input) {
+        const list =
+          ((db as MemoryDb & { voiceSessions?: Array<Record<string, unknown>> }).voiceSessions ??=
+            []);
+        const row = list.find((v) => v.id === input.id && v.tenantId === input.tenantId);
+        if (!row) return;
+        row.status = input.status;
+        if (input.revision != null) row.revision = input.revision;
+        if (input.endedAt !== undefined) row.endedAt = input.endedAt;
+        if (input.lastHeartbeatAt !== undefined) row.lastHeartbeatAt = input.lastHeartbeatAt;
+        if (input.terminationReason !== undefined) {
+          row.terminationReason = input.terminationReason;
+        }
+        if (input.providerSessionRef !== undefined) {
+          (row as { providerSessionRef?: string | null }).providerSessionRef =
+            input.providerSessionRef;
+        }
+      },
+      async heartbeat(id, tenantId, guestSessionId) {
+        const row = await this.assertOwnedByGuest(id, guestSessionId, tenantId);
+        if (!row) return false;
+        const closed = new Set(["ended", "failed", "expired", "abandoned", "disconnecting"]);
+        if (closed.has(row.status)) return false;
+        row.lastHeartbeatAt = new Date();
+        return true;
+      },
+      async abandonStale(olderThan) {
+        const list =
+          ((db as MemoryDb & { voiceSessions?: Array<Record<string, unknown>> }).voiceSessions ??=
+            []);
+        let n = 0;
+        const closed = new Set(["ended", "failed", "expired", "abandoned"]);
+        for (const row of list) {
+          if (row.endedAt || closed.has(String(row.status))) continue;
+          const hb = (row.lastHeartbeatAt as Date | null) ?? (row.createdAt as Date);
+          if (hb < olderThan) {
+            row.status = "abandoned";
+            row.endedAt = new Date();
+            row.terminationReason = "heartbeat_timeout";
+            n += 1;
+          }
+        }
+        return n;
+      },
+    },
   };
 }

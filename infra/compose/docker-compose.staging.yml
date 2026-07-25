@@ -19,6 +19,8 @@ services:
       NEXT_PUBLIC_API_URL: https://api.staging.lotavi.com
       NEXT_PUBLIC_WEB_URL: https://staging.lotavi.com
       NEXT_PUBLIC_SITE_ENV: staging
+      # CSP Gemini connect-src only when verifying direct voice (never production):
+      # NEXT_PUBLIC_DIRECT_GEMINI_CSP: "true"
     restart: unless-stopped
 
   api:
@@ -26,11 +28,20 @@ services:
       context: ../..
       dockerfile: apps/api/Dockerfile
     environment:
-      NODE_ENV: production
+      # Use staging (not production) so V1.5 direct gates can apply when explicitly enabled.
+      NODE_ENV: staging
       LOTIVA_STORE: postgres
       ALLOW_MEMORY_STORE: "false"
       ALLOW_DEMO_SEED: "false"
+      # Safe defaults — V1.5 direct requires ALL of the following + GEMINI_API_KEY:
       VOICE_ENABLED: "false"
+      VOICE_TRANSPORT: "off"
+      DIRECT_GEMINI_ENABLED: "false"
+      DIRECT_GEMINI_STAGING_ACKNOWLEDGED: "false"
+      VOICE_WRITE_TOOLS_ENABLED: "false"
+      VOICE_RAG_TOOLS_ENABLED: "false"
+      PUBLIC_WEB_URL: https://staging.lotavi.com
+      PUBLIC_API_URL: https://api.staging.lotavi.com
       DATABASE_URL: ${DATABASE_URL}
       REDIS_URL: redis://redis:6379
       SESSION_SECRET: ${SESSION_SECRET}
@@ -39,6 +50,14 @@ services:
       EMBEDDING_BACKEND: model
       REQUIRE_REDIS_RATE_LIMIT: "true"
       PUBLIC_APP_HOST: staging.lotavi.com
+      # Optional V1.5 enablement (fail-fast if incomplete):
+      # VOICE_ENABLED: "true"
+      # VOICE_TRANSPORT: direct
+      # DIRECT_GEMINI_ENABLED: "true"
+      # DIRECT_GEMINI_STAGING_ACKNOWLEDGED: "true"
+      # DIRECT_GEMINI_PROPERTY_ALLOWLIST: "<property-uuid>"
+      # GEMINI_API_KEY: ${GEMINI_API_KEY}
+      # VOICE_HEARTBEAT_TTL_SECONDS: "90"
     restart: unless-stopped
     depends_on:
       postgres:

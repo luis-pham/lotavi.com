@@ -1,11 +1,16 @@
 # Lotiva Production-Ready Documentation Pack
 
-Bộ tài liệu này là nguồn sự thật để AI coding agent hoặc đội kỹ thuật triển khai dự án Lotiva (lotiva.vn) Guest Portal Phase 0.
+Bộ tài liệu Phase 0 (internal package name `lotiva`). Public brand: **Lotavi**.
+
+> **Voice architecture note.**  
+> Many files in this pack predate the direct Gemini browser decision and may describe a server media relay.  
+> **Voice source of truth:** [`docs/voice/README.md`](../docs/voice/README.md) and [`docs/architecture/adr/ADR-direct-gemini-live-browser.md`](../docs/architecture/adr/ADR-direct-gemini-live-browser.md).  
+> Voice is **disabled**; provider/device verification is **not** complete. Do not treat this pack as authorizing production voice.
 
 ## Mục tiêu sản phẩm
 
-Lotiva là web app đa ngôn ngữ mở bằng QR trong phòng/cabin, cho phép khách:
-- nói chuyện realtime với trợ lý AI bằng Gemini Live Native Audio;
+Lotavi là web app đa ngôn ngữ mở bằng QR trong phòng/cabin. **Hiện tại (pilot):** text + knowledge + tickets. **Voice** là hướng tới (direct browser ↔ Gemini Live, Lotavi control plane) — chưa bật production:
+- nói chuyện realtime với trợ lý AI bằng Gemini Live Native Audio (**planned / staging spike only**);
 - chat bằng text;
 - tìm thông tin từ knowledge base đã phê duyệt;
 - xem lịch trình, thông báo;

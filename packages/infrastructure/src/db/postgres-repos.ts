@@ -913,6 +913,147 @@ export function createPostgresRepos(): LotivaRepos {
         });
       },
     },
+
+    voiceSessions: {
+      async create(input) {
+        return withTenant(input.tenantId, async (db) => {
+          const now = new Date();
+          await db.insert(t.voiceSessions).values({
+            id: input.id,
+            tenantId: input.tenantId,
+            propertyId: input.propertyId,
+            guestSessionId: input.guestSessionId,
+            conversationId: input.conversationId,
+            provider: input.provider ?? "gemini_live",
+            transport: input.transport,
+            status: input.status ?? "created",
+            revision: 0,
+            lastHeartbeatAt: now,
+          });
+          return {
+            id: input.id,
+            tenantId: input.tenantId,
+            propertyId: input.propertyId,
+            guestSessionId: input.guestSessionId,
+            conversationId: input.conversationId,
+            provider: input.provider ?? "gemini_live",
+            transport: input.transport,
+            status: input.status ?? "created",
+            revision: 0,
+            lastHeartbeatAt: now,
+            terminationReason: null,
+            createdAt: now,
+            endedAt: null,
+          };
+        });
+      },
+      async get(id, tenantId) {
+        return withTenant(tenantId, async (db) => {
+          const rows = await db
+            .select()
+            .from(t.voiceSessions)
+            .where(and(eq(t.voiceSessions.id, id), eq(t.voiceSessions.tenantId, tenantId)))
+            .limit(1);
+          const row = rows[0];
+          if (!row || !row.propertyId || !row.guestSessionId) return null;
+          return {
+            id: row.id,
+            tenantId: row.tenantId,
+            propertyId: row.propertyId,
+            guestSessionId: row.guestSessionId,
+            conversationId: row.conversationId,
+            provider: row.provider,
+            transport: row.transport as "relay" | "direct" | "off",
+            status: row.status,
+            revision: row.revision,
+            lastHeartbeatAt: row.lastHeartbeatAt ?? null,
+            terminationReason: row.terminationReason ?? null,
+            createdAt: row.createdAt,
+            endedAt: row.endedAt,
+          };
+        });
+      },
+      async assertOwnedByGuest(id, guestSessionId, tenantId) {
+        const row = await this.get(id, tenantId);
+        if (!row || row.guestSessionId !== guestSessionId || row.endedAt) return null;
+        return row;
+      },
+      async countOpenForProperty(propertyId, tenantId) {
+        return withTenant(tenantId, async (db) => {
+          const rows = await db
+            .select({ id: t.voiceSessions.id, status: t.voiceSessions.status })
+            .from(t.voiceSessions)
+            .where(
+              and(
+                eq(t.voiceSessions.propertyId, propertyId),
+                eq(t.voiceSessions.tenantId, tenantId),
+                isNull(t.voiceSessions.endedAt),
+              ),
+            );
+          const closed = new Set(["ended", "failed", "expired", "abandoned"]);
+          return rows.filter((r) => !closed.has(r.status)).length;
+        });
+      },
+      async updateStatus(input) {
+        await withTenant(input.tenantId, async (db) => {
+          await db
+            .update(t.voiceSessions)
+            .set({
+              status: input.status,
+              ...(input.revision != null ? { revision: input.revision } : {}),
+              ...(input.endedAt !== undefined ? { endedAt: input.endedAt } : {}),
+              ...(input.lastHeartbeatAt !== undefined
+                ? { lastHeartbeatAt: input.lastHeartbeatAt }
+                : {}),
+              ...(input.terminationReason !== undefined
+                ? { terminationReason: input.terminationReason }
+                : {}),
+              ...(input.providerSessionRef !== undefined
+                ? { providerSessionRef: input.providerSessionRef }
+                : {}),
+            })
+            .where(and(eq(t.voiceSessions.id, input.id), eq(t.voiceSessions.tenantId, input.tenantId)));
+        });
+      },
+      async heartbeat(id, tenantId, guestSessionId) {
+        return withTenant(tenantId, async (db) => {
+          const rows = await db
+            .select()
+            .from(t.voiceSessions)
+            .where(and(eq(t.voiceSessions.id, id), eq(t.voiceSessions.tenantId, tenantId)))
+            .limit(1);
+          const row = rows[0];
+          if (!row || row.guestSessionId !== guestSessionId || row.endedAt) return false;
+          const closed = new Set(["ended", "failed", "expired", "abandoned", "disconnecting"]);
+          if (closed.has(row.status)) return false;
+          await db
+            .update(t.voiceSessions)
+            .set({ lastHeartbeatAt: new Date() })
+            .where(and(eq(t.voiceSessions.id, id), eq(t.voiceSessions.tenantId, tenantId)));
+          return true;
+        });
+      },
+      async abandonStale(olderThan) {
+        // Cross-tenant cleanup uses admin SQL path via getSql when available.
+        try {
+          const { getSql } = await import("./client.js");
+          const sql = getSql();
+          const result = await sql`
+            UPDATE voice_sessions
+            SET status = 'abandoned',
+                ended_at = NOW(),
+                termination_reason = 'heartbeat_timeout'
+            WHERE ended_at IS NULL
+              AND status NOT IN ('ended', 'failed', 'expired', 'abandoned')
+              AND COALESCE(last_heartbeat_at, created_at) < ${olderThan}
+            RETURNING id
+          `;
+          return result.length;
+        } catch {
+          return 0;
+        }
+      },
+    },
   };
   return repos;
 }

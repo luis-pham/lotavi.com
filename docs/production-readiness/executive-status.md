@@ -1,7 +1,8 @@
-# Lotiva Production Readiness — Executive Status
+# Lotavi Production Readiness — Executive Status
 
-**Date:** 2026-07-25  
-**Classification:** PILOT READY (controlled, limited pilot only)  
+**Date:** 2026-07-26  
+**Classification:** PILOT READY (controlled, limited pilot only) — **text experience**  
+**Voice:** disabled — see [`docs/voice/current-status.md`](../voice/current-status.md)  
 **F8 status:** See `f8-final-verification-report.md` — staging production evidence incomplete; retain pilot classification.
 
 ## Verdict

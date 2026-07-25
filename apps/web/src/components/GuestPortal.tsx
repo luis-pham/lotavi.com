@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
+import { VoiceDirectSpike } from "./VoiceDirectSpike";
 
 type Theme = {
   brandName: string;
@@ -31,6 +32,17 @@ export function GuestPortal({ token }: { token: string }) {
   const [reqDesc, setReqDesc] = useState("Extra towels please");
   const [error, setError] = useState<string | null>(null);
   const [voiceStatus, setVoiceStatus] = useState<string>("idle");
+  const [voiceStarting, setVoiceStarting] = useState(false);
+  const [voiceCaps, setVoiceCaps] = useState<{
+    voiceEnabled: boolean;
+    directEnabled: boolean;
+    diagnosticsEnabled: boolean;
+    textFallbackEnabled: boolean;
+  } | null>(null);
+  const [voiceDirect, setVoiceDirect] = useState<{
+    voiceSessionId: string;
+    mintPath: string;
+  } | null>(null);
 
   useEffect(() => {
     void (async () => {
@@ -44,14 +56,21 @@ export function GuestPortal({ token }: { token: string }) {
         });
         setRoomLabel(session.roomLabel);
         setTheme(session.theme);
-        const [s, a, t] = await Promise.all([
+        const [s, a, t, caps] = await Promise.all([
           api<{ items: Array<{ title: string; location: string | null }> }>("/api/v1/guest/schedules"),
           api<{ items: Array<{ title: string; body: string }> }>("/api/v1/guest/announcements"),
           api<{ items: Array<{ id: string; status: string; description: string }> }>("/api/v1/guest/tickets"),
+          api<{
+            voiceEnabled: boolean;
+            directEnabled: boolean;
+            diagnosticsEnabled: boolean;
+            textFallbackEnabled: boolean;
+          }>("/api/v1/voice/capabilities").catch(() => null),
         ]);
         setSchedules(s.items);
         setAnnouncements(a.items);
         setTickets(t.items);
+        if (caps) setVoiceCaps(caps);
       } catch (e) {
         setError((e as Error).message);
       }
@@ -113,12 +132,49 @@ export function GuestPortal({ token }: { token: string }) {
   }
 
   async function startVoice() {
+    if (voiceStarting || voiceDirect) return;
+    setVoiceStarting(true);
     setVoiceStatus("connecting");
-    const res = await api<{ voiceSessionId: string; event: { type: string } }>(
-      "/api/v1/voice/sessions",
-      { method: "POST", json: {} },
-    );
-    setVoiceStatus(res.event.type === "session.ready" ? "ready (canonical)" : res.event.type);
+    setVoiceDirect(null);
+    try {
+      const res = await api<{
+        voiceSessionId: string;
+        event: { type: string };
+        transport?: string;
+        directMintPath?: string | null;
+        wsPath?: string | null;
+      }>("/api/v1/voice/sessions", { method: "POST", json: {} });
+      setVoiceStatus(
+        res.event.type === "session.ready"
+          ? `ready (${res.transport ?? "relay"})`
+          : res.event.type,
+      );
+      if (res.transport === "direct" && res.directMintPath && voiceCaps?.directEnabled) {
+        setVoiceDirect({
+          voiceSessionId: res.voiceSessionId,
+          mintPath: res.directMintPath,
+        });
+      } else if (res.wsPath && typeof window !== "undefined") {
+        // V0 relay: open owned WebSocket (still placeholder audio on server)
+        const proto = window.location.protocol === "https:" ? "wss" : "ws";
+        const host = process.env.NEXT_PUBLIC_API_URL?.replace(/^https?:\/\//, "") ?? "localhost:4000";
+        const ws = new WebSocket(`${proto}://${host}${res.wsPath}`);
+        ws.onopen = () => setVoiceStatus("relay_ws_open");
+        ws.onerror = () => setVoiceStatus("relay_ws_error");
+        ws.onmessage = (ev) => {
+          try {
+            const msg = JSON.parse(String(ev.data)) as { type?: string };
+            if (msg.type) setVoiceStatus(`relay:${msg.type}`);
+          } catch {
+            /* ignore */
+          }
+        };
+      }
+    } catch (e) {
+      setVoiceStatus(`failed: ${(e as Error).message}`);
+    } finally {
+      setVoiceStarting(false);
+    }
   }
 
   if (error) {
@@ -160,12 +216,34 @@ export function GuestPortal({ token }: { token: string }) {
 
       {tab === "chat" && (
         <section>
-          <div className="row" style={{ marginBottom: 12 }}>
-            <button type="button" onClick={() => void startVoice()}>
-              Bắt đầu Voice
-            </button>
-            <span className="muted">Voice: {voiceStatus}</span>
-          </div>
+          {voiceCaps?.voiceEnabled ? (
+            <div className="row" style={{ marginBottom: 12 }}>
+              <button
+                type="button"
+                disabled={voiceStarting || Boolean(voiceDirect)}
+                onClick={() => void startVoice()}
+              >
+                {voiceCaps.directEnabled ? "Start experimental voice session" : "Bắt đầu Voice"}
+              </button>
+              <span className="muted">Voice: {voiceStatus}</span>
+            </div>
+          ) : null}
+          {voiceDirect && voiceCaps?.directEnabled ? (
+            <VoiceDirectSpike
+              voiceSessionId={voiceDirect.voiceSessionId}
+              mintPath={voiceDirect.mintPath}
+              diagnosticsEnabled={Boolean(voiceCaps.diagnosticsEnabled)}
+              onFallbackToText={(reason) => {
+                setVoiceStatus(`fallback_text:${reason}`);
+                setVoiceDirect(null);
+                setTab("chat");
+              }}
+              onStopped={() => {
+                setVoiceDirect(null);
+                setVoiceStatus("ended");
+              }}
+            />
+          ) : null}
           {messages.map((m, i) => (
             <div key={i} className={`bubble ${m.role}`}>
               {m.content}

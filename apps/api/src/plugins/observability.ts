@@ -2,6 +2,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { newId } from "@lotiva/domain";
 import { getAppContext } from "../app-context.js";
 import { pingPostgres } from "@lotiva/infrastructure";
+import { renderVoiceMetrics } from "../lib/voice-metrics.js";
 
 type Metrics = {
   requests: number;
@@ -77,6 +78,7 @@ export async function registerObservability(app: FastifyInstance) {
       "# HELP lotiva_tickets_created_total Tickets created",
       "# TYPE lotiva_tickets_created_total counter",
       `lotiva_tickets_created_total ${metrics.ticketsCreated}`,
+      ...renderVoiceMetrics(),
     ].join("\n");
   });
 }

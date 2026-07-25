@@ -4,13 +4,16 @@ document_id: "DEL-001"
 version: "1.0.0"
 status: "approved"
 owners: ["Product", "Engineering", "Design"]
-last_updated: "2026-07-25"
+last_updated: "2026-07-26"
 depends_on: []
 source_of_truth_for: ["delivery plan"]
 implemented_by: []
 reviewed_by: []
 ---
 
+> **Historical architecture note (voice).**  
+> Phase wording that assumes a Lotavi media Voice Gateway is superseded by direct browser ↔ Gemini Live + Lotavi control plane.  
+> **Current source of truth:** [docs/voice/README.md](../../docs/voice/README.md).
 
 # Implementation phases
 

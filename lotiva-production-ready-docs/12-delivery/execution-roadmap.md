@@ -4,12 +4,16 @@ document_id: "DEL-004"
 version: "1.0.0"
 status: "approved"
 owners: ["Product", "Engineering", "Design"]
-last_updated: "2026-07-25"
+last_updated: "2026-07-26"
 depends_on: ["DEL-001", "DEL-002", "DEL-003"]
 source_of_truth_for: ["execution status and delivery order"]
 implemented_by: []
 reviewed_by: []
 ---
+
+> **Historical architecture note (voice).**  
+> Mentions of “Voice Gateway” / server-relayed Gemini media are obsolete as product architecture.  
+> **Current source of truth:** [docs/voice/README.md](../../docs/voice/README.md). Voice remains disabled; provider/device verification blocked.
 
 # Execution Roadmap — Lotiva Phase 0
 

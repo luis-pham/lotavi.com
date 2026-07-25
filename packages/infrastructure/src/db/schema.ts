@@ -386,12 +386,18 @@ export const voiceSessions = pgTable("voice_sessions", {
   tenantId: uuid("tenant_id")
     .notNull()
     .references(() => tenants.id),
+  propertyId: uuid("property_id").references(() => properties.id),
+  guestSessionId: uuid("guest_session_id").references(() => guestSessions.id),
   conversationId: uuid("conversation_id")
     .notNull()
     .references(() => conversations.id),
   provider: text("provider").notNull().default("gemini_live"),
+  transport: text("transport").notNull().default("relay"),
+  providerSessionRef: text("provider_session_ref"),
   status: text("status").notNull().default("initializing"),
   revision: integer("revision").notNull().default(0),
+  lastHeartbeatAt: timestamp("last_heartbeat_at", { withTimezone: true }),
+  terminationReason: text("termination_reason"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   endedAt: timestamp("ended_at", { withTimezone: true }),
 });
