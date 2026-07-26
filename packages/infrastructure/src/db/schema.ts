@@ -42,6 +42,9 @@ export const rooms = pgTable(
       .notNull()
       .references(() => properties.id),
     label: text("label").notNull(),
+    deck: text("deck"),
+    zone: text("zone"),
+    active: boolean("active").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("rooms_property_idx").on(t.propertyId)],
@@ -56,10 +59,107 @@ export const users = pgTable(
     passwordHash: text("password_hash").notNull(),
     displayName: text("display_name").notNull(),
     role: text("role").notNull(),
+    departmentId: uuid("department_id"),
+    active: boolean("active").notNull().default(true),
+    lastActiveAt: timestamp("last_active_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("users_tenant_idx").on(t.tenantId)],
 );
+
+export const departments = pgTable(
+  "departments",
+  {
+    id: uuid("id").primaryKey(),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id),
+    propertyId: uuid("property_id")
+      .notNull()
+      .references(() => properties.id),
+    name: text("name").notNull(),
+    slug: text("slug").notNull(),
+    defaultSlaMinutes: integer("default_sla_minutes").notNull().default(60),
+    active: boolean("active").notNull().default(true),
+    managerUserId: uuid("manager_user_id"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("departments_property_idx").on(t.propertyId)],
+);
+
+export const requestCategories = pgTable("request_categories", {
+  id: uuid("id").primaryKey(),
+  tenantId: uuid("tenant_id")
+    .notNull()
+    .references(() => tenants.id),
+  propertyId: uuid("property_id")
+    .notNull()
+    .references(() => properties.id),
+  guestName: text("guest_name").notNull(),
+  internalName: text("internal_name").notNull(),
+  description: text("description"),
+  icon: text("icon").notNull().default("help"),
+  defaultDepartmentId: uuid("default_department_id"),
+  defaultPriority: text("default_priority").notNull().default("normal"),
+  defaultSlaMinutes: integer("default_sla_minutes").notNull().default(60),
+  sortOrder: integer("sort_order").notNull().default(0),
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const journeys = pgTable(
+  "journeys",
+  {
+    id: uuid("id").primaryKey(),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id),
+    propertyId: uuid("property_id")
+      .notNull()
+      .references(() => properties.id),
+    name: text("name").notNull(),
+    status: text("status").notNull().default("upcoming"),
+    startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
+    endsAt: timestamp("ends_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("journeys_property_idx").on(t.propertyId)],
+);
+
+export const guests = pgTable("guests", {
+  id: uuid("id").primaryKey(),
+  tenantId: uuid("tenant_id")
+    .notNull()
+    .references(() => tenants.id),
+  propertyId: uuid("property_id")
+    .notNull()
+    .references(() => properties.id),
+  displayName: text("display_name").notNull(),
+  email: text("email"),
+  locale: text("locale").notNull().default("en"),
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const guestStays = pgTable("guest_stays", {
+  id: uuid("id").primaryKey(),
+  tenantId: uuid("tenant_id")
+    .notNull()
+    .references(() => tenants.id),
+  propertyId: uuid("property_id")
+    .notNull()
+    .references(() => properties.id),
+  guestId: uuid("guest_id")
+    .notNull()
+    .references(() => guests.id),
+  journeyId: uuid("journey_id"),
+  roomId: uuid("room_id")
+    .notNull()
+    .references(() => rooms.id),
+  status: text("status").notNull().default("active"),
+  guestSessionId: uuid("guest_session_id"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
 
 export const qrContexts = pgTable(
   "qr_contexts",
@@ -80,6 +180,11 @@ export const qrContexts = pgTable(
     revokedAt: timestamp("revoked_at", { withTimezone: true }),
     rotatedFrom: uuid("rotated_from"),
     rotatedAt: timestamp("rotated_at", { withTimezone: true }),
+    label: text("label"),
+    qrLevel: text("qr_level").notNull().default("cabin"),
+    journeyId: uuid("journey_id"),
+    scanCount: integer("scan_count").notNull().default(0),
+    lastScanAt: timestamp("last_scan_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
@@ -280,6 +385,11 @@ export const announcements = pgTable("announcements", {
   body: text("body").notNull(),
   publishedAt: timestamp("published_at", { withTimezone: true }).notNull().defaultNow(),
   active: boolean("active").notNull().default(true),
+  status: text("status").notNull().default("published"),
+  priority: text("priority").notNull().default("normal"),
+  expiresAt: timestamp("expires_at", { withTimezone: true }),
+  target: text("target").notNull().default("current_journey"),
+  journeyId: uuid("journey_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -322,6 +432,15 @@ export const tickets = pgTable(
     version: integer("version").notNull().default(1),
     guestConfirmedAt: timestamp("guest_confirmed_at", { withTimezone: true }),
     idempotencyKey: text("idempotency_key").notNull(),
+    title: text("title"),
+    priority: text("priority").notNull().default("normal"),
+    assigneeId: uuid("assignee_id"),
+    escalated: boolean("escalated").notNull().default(false),
+    source: text("source").notNull().default("guest_portal"),
+    categoryId: uuid("category_id"),
+    journeyId: uuid("journey_id"),
+    dueAt: timestamp("due_at", { withTimezone: true }),
+    unreadStaff: boolean("unread_staff").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
@@ -329,6 +448,73 @@ export const tickets = pgTable(
     index("tickets_property_idx").on(t.propertyId),
   ],
 );
+
+export const ticketNotes = pgTable(
+  "ticket_notes",
+  {
+    id: uuid("id").primaryKey(),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id),
+    ticketId: uuid("ticket_id")
+      .notNull()
+      .references(() => tickets.id),
+    authorId: uuid("author_id"),
+    visibility: text("visibility").notNull().default("internal"),
+    body: text("body").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("ticket_notes_ticket_idx").on(t.ticketId)],
+);
+
+export const handoverNotes = pgTable("handover_notes", {
+  id: uuid("id").primaryKey(),
+  tenantId: uuid("tenant_id")
+    .notNull()
+    .references(() => tenants.id),
+  propertyId: uuid("property_id")
+    .notNull()
+    .references(() => properties.id),
+  departmentId: uuid("department_id"),
+  authorId: uuid("author_id"),
+  body: text("body").notNull(),
+  status: text("status").notNull().default("open"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  acknowledgedAt: timestamp("acknowledged_at", { withTimezone: true }),
+  resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+});
+
+export const propertySettings = pgTable("property_settings", {
+  propertyId: uuid("property_id").primaryKey(),
+  tenantId: uuid("tenant_id")
+    .notNull()
+    .references(() => tenants.id),
+  timezone: text("timezone").notNull().default("UTC"),
+  defaultLanguage: text("default_language").notNull().default("en"),
+  brandColor: text("brand_color").notNull().default("#0F3D2E"),
+  logoUrl: text("logo_url"),
+  contactInfo: text("contact_info"),
+  defaultSlaMinutes: integer("default_sla_minutes").notNull().default(60),
+  notificationDefaults: jsonb("notification_defaults").notNull().default({}),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const portalContent = pgTable("portal_content", {
+  id: uuid("id").primaryKey(),
+  tenantId: uuid("tenant_id")
+    .notNull()
+    .references(() => tenants.id),
+  propertyId: uuid("property_id")
+    .notNull()
+    .references(() => properties.id),
+  sectionKey: text("section_key").notNull(),
+  title: text("title").notNull(),
+  body: text("body").notNull(),
+  sortOrder: integer("sort_order").notNull().default(0),
+  enabled: boolean("enabled").notNull().default(true),
+  status: text("status").notNull().default("published"),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
 
 export const ticketEvents = pgTable("ticket_events", {
   id: uuid("id").primaryKey(),

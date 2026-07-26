@@ -17,21 +17,42 @@ type Theme = {
 };
 
 type Msg = { role: "guest" | "assistant"; content: string };
+type Category = { id: string; guestName: string; description?: string | null; icon?: string };
+type PortalSection = { sectionKey: string; title: string; body: string; sortOrder?: number };
+type Ticket = { id: string; status: string; description: string; category?: string };
+
+const STATUS_LABEL: Record<string, string> = {
+  submitted: "New",
+  acknowledged: "Accepted",
+  assigned: "Accepted",
+  in_progress: "In progress",
+  needs_info: "Waiting",
+  resolved: "Completed",
+  completed: "Completed",
+  guest_confirmed: "Confirmed",
+  reopened: "Reopened",
+  cancelled: "Cancelled",
+};
 
 export function GuestPortal({ token }: { token: string }) {
   const [theme, setTheme] = useState<Theme | null>(null);
   const [roomLabel, setRoomLabel] = useState("");
-  const [tab, setTab] = useState<"home" | "chat" | "schedule" | "requests">("home");
+  const [tab, setTab] = useState<"home" | "info" | "requests" | "chat">("home");
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [conversationId, setConversationId] = useState<string>();
-  const [schedules, setSchedules] = useState<Array<{ title: string; location: string | null }>>([]);
   const [announcements, setAnnouncements] = useState<Array<{ title: string; body: string }>>([]);
-  const [tickets, setTickets] = useState<Array<{ id: string; status: string; description: string }>>([]);
+  const [schedules, setSchedules] = useState<Array<{ title: string; location: string | null }>>([]);
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [portalContent, setPortalContent] = useState<PortalSection[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [reqDesc, setReqDesc] = useState("");
   const [pendingId, setPendingId] = useState<string | null>(null);
-  const [reqDesc, setReqDesc] = useState("Extra towels please");
+  const [confirmedFlash, setConfirmedFlash] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [voiceStatus, setVoiceStatus] = useState<string>("idle");
+  const [loading, setLoading] = useState(true);
+  const [voiceStatus, setVoiceStatus] = useState("idle");
   const [voiceStarting, setVoiceStarting] = useState(false);
   const [voiceCaps, setVoiceCaps] = useState<{
     voiceEnabled: boolean;
@@ -39,40 +60,48 @@ export function GuestPortal({ token }: { token: string }) {
     diagnosticsEnabled: boolean;
     textFallbackEnabled: boolean;
   } | null>(null);
-  const [voiceDirect, setVoiceDirect] = useState<{
-    voiceSessionId: string;
-    mintPath: string;
-  } | null>(null);
+  const [voiceDirect, setVoiceDirect] = useState<{ voiceSessionId: string; mintPath: string } | null>(
+    null,
+  );
+
+  async function refreshTickets() {
+    const t = await api<{ items: Ticket[] }>("/api/v1/guest/tickets");
+    setTickets(t.items);
+  }
 
   useEffect(() => {
     void (async () => {
+      setLoading(true);
       try {
-        const session = await api<{
-          roomLabel: string;
-          theme: Theme | null;
-        }>("/api/v1/guest/sessions/from-qr", {
-          method: "POST",
-          json: { token, locale: "vi-VN" },
-        });
+        const session = await api<{ roomLabel: string; theme: Theme | null }>(
+          "/api/v1/guest/sessions/from-qr",
+          { method: "POST", json: { token, locale: "en" } },
+        );
         setRoomLabel(session.roomLabel);
         setTheme(session.theme);
-        const [s, a, t, caps] = await Promise.all([
+        const [s, a, t, caps, cats, content] = await Promise.all([
           api<{ items: Array<{ title: string; location: string | null }> }>("/api/v1/guest/schedules"),
           api<{ items: Array<{ title: string; body: string }> }>("/api/v1/guest/announcements"),
-          api<{ items: Array<{ id: string; status: string; description: string }> }>("/api/v1/guest/tickets"),
+          api<{ items: Ticket[] }>("/api/v1/guest/tickets"),
           api<{
             voiceEnabled: boolean;
             directEnabled: boolean;
             diagnosticsEnabled: boolean;
             textFallbackEnabled: boolean;
           }>("/api/v1/voice/capabilities").catch(() => null),
+          api<{ items: Category[] }>("/api/v1/guest/request-categories").catch(() => ({ items: [] })),
+          api<{ items: PortalSection[] }>("/api/v1/guest/portal-content").catch(() => ({ items: [] })),
         ]);
         setSchedules(s.items);
         setAnnouncements(a.items);
         setTickets(t.items);
+        setCategories(cats.items);
+        setPortalContent(content.items.sort((x, y) => (x.sortOrder ?? 0) - (y.sortOrder ?? 0)));
         if (caps) setVoiceCaps(caps);
       } catch (e) {
         setError((e as Error).message);
+      } finally {
+        setLoading(false);
       }
     })();
   }, [token]);
@@ -94,21 +123,23 @@ export function GuestPortal({ token }: { token: string }) {
     const text = input.trim();
     setInput("");
     setMessages((m) => [...m, { role: "guest", content: text }]);
-    const res = await api<{
-      conversationId: string;
-      assistantMessage: { content: string };
-    }>("/api/v1/guest/chat", {
-      method: "POST",
-      json: { message: text, conversationId },
-    });
+    const res = await api<{ conversationId: string; assistantMessage: { content: string } }>(
+      "/api/v1/guest/chat",
+      { method: "POST", json: { message: text, conversationId } },
+    );
     setConversationId(res.conversationId);
     setMessages((m) => [...m, { role: "assistant", content: res.assistantMessage.content }]);
   }
 
   async function prepareRequest() {
+    if (!selectedCategory || !reqDesc.trim()) return;
     const res = await api<{ pendingActionId: string }>("/api/v1/guest/tickets/prepare", {
       method: "POST",
-      json: { category: "housekeeping", description: reqDesc },
+      json: {
+        category: selectedCategory.guestName,
+        description: reqDesc.trim(),
+        department: selectedCategory.guestName,
+      },
     });
     setPendingId(res.pendingActionId);
   }
@@ -125,10 +156,12 @@ export function GuestPortal({ token }: { token: string }) {
       headers: { "Idempotency-Key": `web-${pendingId}-${confirmed}` },
     });
     setPendingId(null);
-    const t = await api<{ items: Array<{ id: string; status: string; description: string }> }>(
-      "/api/v1/guest/tickets",
-    );
-    setTickets(t.items);
+    if (confirmed) {
+      setConfirmedFlash(true);
+      setReqDesc("");
+      setSelectedCategory(null);
+    }
+    await refreshTickets();
   }
 
   async function startVoice() {
@@ -145,30 +178,10 @@ export function GuestPortal({ token }: { token: string }) {
         wsPath?: string | null;
       }>("/api/v1/voice/sessions", { method: "POST", json: {} });
       setVoiceStatus(
-        res.event.type === "session.ready"
-          ? `ready (${res.transport ?? "relay"})`
-          : res.event.type,
+        res.event.type === "session.ready" ? `ready (${res.transport ?? "relay"})` : res.event.type,
       );
       if (res.transport === "direct" && res.directMintPath && voiceCaps?.directEnabled) {
-        setVoiceDirect({
-          voiceSessionId: res.voiceSessionId,
-          mintPath: res.directMintPath,
-        });
-      } else if (res.wsPath && typeof window !== "undefined") {
-        // V0 relay: open owned WebSocket (still placeholder audio on server)
-        const proto = window.location.protocol === "https:" ? "wss" : "ws";
-        const host = process.env.NEXT_PUBLIC_API_URL?.replace(/^https?:\/\//, "") ?? "localhost:4000";
-        const ws = new WebSocket(`${proto}://${host}${res.wsPath}`);
-        ws.onopen = () => setVoiceStatus("relay_ws_open");
-        ws.onerror = () => setVoiceStatus("relay_ws_error");
-        ws.onmessage = (ev) => {
-          try {
-            const msg = JSON.parse(String(ev.data)) as { type?: string };
-            if (msg.type) setVoiceStatus(`relay:${msg.type}`);
-          } catch {
-            /* ignore */
-          }
-        };
+        setVoiceDirect({ voiceSessionId: res.voiceSessionId, mintPath: res.directMintPath });
       }
     } catch (e) {
       setVoiceStatus(`failed: ${(e as Error).message}`);
@@ -179,51 +192,191 @@ export function GuestPortal({ token }: { token: string }) {
 
   if (error) {
     return (
-      <main className="shell">
-        <h1>QR không hợp lệ</h1>
-        <p>{error}</p>
-        <Link href="/">Về Lotavi</Link>
+      <main className="guest-shell guest-error">
+        <h1>Access unavailable</h1>
+        <p>{error.includes("expired") ? "This guest access link has expired." : "Invalid or inactive QR access."}</p>
+        <p className="muted">Please ask reception for a new cabin QR.</p>
+        <Link href="/">Back to Lotavi</Link>
+      </main>
+    );
+  }
+
+  if (loading) {
+    return (
+      <main className="guest-shell">
+        <p className="muted">Opening your guest portal…</p>
       </main>
     );
   }
 
   return (
-    <main className="shell" style={cssVars}>
-      <p className="muted">Phòng {roomLabel || "…"}</p>
-      <h1 style={{ fontSize: "2.6rem", margin: "4px 0 8px" }}>
-        {theme?.brandName ?? "Lotavi"}
-      </h1>
-      <p className="muted">{theme?.assistantName ?? "Assistant"} sẵn sàng hỗ trợ bạn.</p>
+    <main className="guest-shell" style={cssVars}>
+      <header className="guest-header">
+        <p className="muted">Cabin {roomLabel || "…"}</p>
+        <h1>{theme?.brandName ?? "Lotavi"}</h1>
+        <p className="muted">{theme?.assistantName ?? "Concierge"} is here to help.</p>
+      </header>
 
-      <div className="nav">
-        <button type="button" onClick={() => setTab("home")}>Home</button>
-        <button type="button" onClick={() => setTab("chat")}>Assistant</button>
-        <button type="button" onClick={() => setTab("schedule")}>Schedule</button>
-        <button type="button" onClick={() => setTab("requests")}>Requests</button>
-      </div>
+      <nav className="guest-tabs" aria-label="Guest portal">
+        {(
+          [
+            ["home", "Home"],
+            ["info", "Info"],
+            ["requests", "Requests"],
+            ["chat", "Assistant"],
+          ] as const
+        ).map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            className={tab === id ? "active" : ""}
+            onClick={() => setTab(id)}
+          >
+            {label}
+          </button>
+        ))}
+      </nav>
 
       {tab === "home" && (
-        <section>
-          <h2>Thông báo</h2>
-          {announcements.map((a) => (
-            <div key={a.title} className="bubble">
-              <strong>{a.title}</strong>
-              <p className="muted">{a.body}</p>
-            </div>
+        <section className="guest-section">
+          <h2>Announcements</h2>
+          {announcements.length === 0 ? (
+            <p className="muted">No announcements right now.</p>
+          ) : (
+            announcements.map((a) => (
+              <article key={a.title} className="guest-card">
+                <strong>{a.title}</strong>
+                <p>{a.body}</p>
+              </article>
+            ))
+          )}
+          <h2>Quick requests</h2>
+          <div className="guest-category-grid">
+            {(categories.length ? categories : [{ id: "hk", guestName: "Housekeeping", description: "Towels & cleaning" }]).map(
+              (c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  className="guest-category"
+                  onClick={() => {
+                    setSelectedCategory(c);
+                    setTab("requests");
+                  }}
+                >
+                  <strong>{c.guestName}</strong>
+                  <span className="muted">{c.description || "Request help"}</span>
+                </button>
+              ),
+            )}
+          </div>
+          <h2>Today</h2>
+          {schedules.slice(0, 3).map((s) => (
+            <article key={s.title} className="guest-card">
+              <strong>{s.title}</strong>
+              <p className="muted">{s.location}</p>
+            </article>
           ))}
         </section>
       )}
 
+      {tab === "info" && (
+        <section className="guest-section">
+          <h2>Essential information</h2>
+          {portalContent.length === 0 ? (
+            <article className="guest-card">
+              <strong>Welcome</strong>
+              <p>Wi‑Fi, dining hours, and spa details are available at reception.</p>
+            </article>
+          ) : (
+            portalContent.map((section) => (
+              <article key={section.sectionKey} className="guest-card">
+                <strong>{section.title}</strong>
+                <p>{section.body}</p>
+              </article>
+            ))
+          )}
+          <h2>Help / Contact</h2>
+          <article className="guest-card">
+            <p>Use Requests for cabin service, or chat with {theme?.assistantName ?? "the assistant"}.</p>
+          </article>
+        </section>
+      )}
+
+      {tab === "requests" && (
+        <section className="guest-section">
+          <h2>New request</h2>
+          {!selectedCategory ? (
+            <div className="guest-category-grid">
+              {(categories.length ? categories : [{ id: "hk", guestName: "Housekeeping" }]).map((c) => (
+                <button key={c.id} type="button" className="guest-category" onClick={() => setSelectedCategory(c)}>
+                  <strong>{c.guestName}</strong>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <>
+              <p>
+                Category: <strong>{selectedCategory.guestName}</strong>{" "}
+                <button type="button" className="guest-link" onClick={() => setSelectedCategory(null)}>
+                  Change
+                </button>
+              </p>
+              <textarea
+                value={reqDesc}
+                onChange={(e) => setReqDesc(e.target.value)}
+                rows={3}
+                placeholder="Describe what you need…"
+              />
+              <div className="guest-actions">
+                <button type="button" disabled={!reqDesc.trim()} onClick={() => void prepareRequest()}>
+                  Review request
+                </button>
+              </div>
+            </>
+          )}
+
+          {pendingId && (
+            <article className="guest-card confirm">
+              <p>Confirm sending this request to staff?</p>
+              <div className="guest-actions">
+                <button type="button" onClick={() => void confirmRequest(true)}>
+                  Confirm
+                </button>
+                <button type="button" onClick={() => void confirmRequest(false)}>
+                  Cancel
+                </button>
+              </div>
+            </article>
+          )}
+
+          {confirmedFlash && (
+            <article className="guest-card">
+              <strong>Request sent</strong>
+              <p className="muted">Staff have been notified. Track status below.</p>
+            </article>
+          )}
+
+          <h2>My requests</h2>
+          {tickets.length === 0 ? (
+            <p className="muted">No active requests yet.</p>
+          ) : (
+            tickets.map((t) => (
+              <article key={t.id} className="guest-card">
+                <div className="guest-status">{STATUS_LABEL[t.status] ?? t.status}</div>
+                <p>{t.description}</p>
+                {t.category ? <p className="muted">{t.category}</p> : null}
+              </article>
+            ))
+          )}
+        </section>
+      )}
+
       {tab === "chat" && (
-        <section>
+        <section className="guest-section">
           {voiceCaps?.voiceEnabled ? (
-            <div className="row" style={{ marginBottom: 12 }}>
-              <button
-                type="button"
-                disabled={voiceStarting || Boolean(voiceDirect)}
-                onClick={() => void startVoice()}
-              >
-                {voiceCaps.directEnabled ? "Start experimental voice session" : "Bắt đầu Voice"}
+            <div className="guest-actions">
+              <button type="button" disabled={voiceStarting || Boolean(voiceDirect)} onClick={() => void startVoice()}>
+                Start voice
               </button>
               <span className="muted">Voice: {voiceStatus}</span>
             </div>
@@ -236,7 +389,6 @@ export function GuestPortal({ token }: { token: string }) {
               onFallbackToText={(reason) => {
                 setVoiceStatus(`fallback_text:${reason}`);
                 setVoiceDirect(null);
-                setTab("chat");
               }}
               onStopped={() => {
                 setVoiceDirect(null);
@@ -249,63 +401,19 @@ export function GuestPortal({ token }: { token: string }) {
               {m.content}
             </div>
           ))}
-          <div className="row">
+          <div className="guest-actions">
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Hỏi về hồ bơi, giờ phục vụ…"
+              placeholder="Ask about pool hours…"
               onKeyDown={(e) => {
                 if (e.key === "Enter") void sendChat();
               }}
             />
             <button type="button" onClick={() => void sendChat()}>
-              Gửi
+              Send
             </button>
           </div>
-        </section>
-      )}
-
-      {tab === "schedule" && (
-        <section>
-          <h2>Lịch trình</h2>
-          {schedules.map((s) => (
-            <div key={s.title} className="bubble">
-              <strong>{s.title}</strong>
-              <p className="muted">{s.location}</p>
-            </div>
-          ))}
-        </section>
-      )}
-
-      {tab === "requests" && (
-        <section>
-          <h2>Yêu cầu dịch vụ</h2>
-          <textarea value={reqDesc} onChange={(e) => setReqDesc(e.target.value)} rows={3} />
-          <div className="row" style={{ marginTop: 12 }}>
-            <button type="button" onClick={() => void prepareRequest()}>
-              Chuẩn bị yêu cầu
-            </button>
-          </div>
-          {pendingId && (
-            <div className="bubble" style={{ marginTop: 16 }}>
-              <p>Xác nhận tạo ticket? (bắt buộc trước khi gửi nhân viên)</p>
-              <div className="row">
-                <button type="button" onClick={() => void confirmRequest(true)}>
-                  Xác nhận
-                </button>
-                <button type="button" onClick={() => void confirmRequest(false)}>
-                  Hủy
-                </button>
-              </div>
-            </div>
-          )}
-          <h3>Yêu cầu của tôi</h3>
-          {tickets.map((t) => (
-            <div key={t.id} className="bubble">
-              <strong>{t.status}</strong>
-              <p>{t.description}</p>
-            </div>
-          ))}
         </section>
       )}
     </main>

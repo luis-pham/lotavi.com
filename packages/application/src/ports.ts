@@ -151,6 +151,14 @@ export interface TicketRepository {
       department: string | null;
       createdAt: Date;
       guestSessionId: string;
+      title: string | null;
+      priority: string;
+      assigneeId: string | null;
+      escalated: boolean;
+      source: string;
+      roomId: string;
+      unreadStaff: boolean;
+      dueAt: Date | null;
     }>
   >;
   listForGuestSession(guestSessionId: string, tenantId: string): Promise<
@@ -161,6 +169,14 @@ export interface TicketRepository {
       description: string;
       department: string | null;
       createdAt: Date;
+      title: string | null;
+      priority: string;
+      assigneeId: string | null;
+      escalated: boolean;
+      source: string;
+      roomId: string;
+      unreadStaff: boolean;
+      dueAt: Date | null;
     }>
   >;
   updateStatus(id: string, tenantId: string, status: TicketStatus): Promise<void>;
@@ -186,6 +202,14 @@ export interface TicketRepository {
     description: string;
     guestSessionId: string;
     version: number;
+    title: string | null;
+    priority: string;
+    assigneeId: string | null;
+    escalated: boolean;
+    source: string;
+    roomId: string;
+    unreadStaff: boolean;
+    dueAt: Date | null;
   } | null>;
 }
 

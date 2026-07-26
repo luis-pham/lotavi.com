@@ -3,12 +3,14 @@ import { hashPassword as scryptHash, verifyPassword } from "@lotiva/domain";
 import {
   createMemoryDb,
   createMemoryRepos,
+  createPhase0Ops,
   createPostgresRepos,
   createRateLimiter,
   GeminiLiveAdapter,
   EmbeddingClient,
   pingPostgres,
   type MemoryDb,
+  type Phase0Ops,
   type RateLimiter,
 } from "@lotiva/infrastructure";
 import { getConfig, loadConfig } from "./config.js";
@@ -17,6 +19,7 @@ export type AppContext = {
   store: "memory" | "postgres";
   memory: MemoryDb | null;
   repos: LotivaRepos;
+  phase0: Phase0Ops;
   voice: GeminiLiveAdapter;
   embedding: EmbeddingClient;
   rateLimit: RateLimiter;
@@ -43,6 +46,19 @@ export async function initAppContext(): Promise<AppContext> {
       }
       process.env.LOTIVA_STORE = "memory";
       const memory = createMemoryDb();
+      const phase0 = createPhase0Ops({ store: "memory", db: memory });
+      const seed = memory.seedMeta;
+      const admin = memory.users.find((user) => user.role === "property_admin");
+      const staff = memory.users.find((user) => user.role === "staff");
+      if (admin && staff) {
+        await phase0.seedPhase0Extras(
+          seed.tenantId,
+          seed.propertyId,
+          memory.rooms.map((room) => room.id),
+          admin.id,
+          staff.id,
+        );
+      }
       const rateLimit = await createRateLimiter({
         redisUrl: env.REDIS_URL,
         requireRedis: false,
@@ -54,6 +70,7 @@ export async function initAppContext(): Promise<AppContext> {
         store: "memory",
         memory,
         repos: createMemoryRepos(memory),
+        phase0,
         voice: new GeminiLiveAdapter(env.GEMINI_API_KEY, env.VOICE_ENABLED),
         embedding: new EmbeddingClient(env.EMBEDDING_SERVICE_URL, env.LOTIVA_STORE),
         rateLimit,
@@ -97,6 +114,7 @@ export async function initAppContext(): Promise<AppContext> {
       store: "postgres",
       memory: null,
       repos: createPostgresRepos(),
+      phase0: createPhase0Ops("postgres"),
       voice: new GeminiLiveAdapter(env.GEMINI_API_KEY, env.VOICE_ENABLED),
       embedding: new EmbeddingClient(env.EMBEDDING_SERVICE_URL, env.LOTIVA_STORE),
       rateLimit,

@@ -16,3 +16,6 @@ __pycache__
 *.pyc
 apps/embedding-service/.venv
 infra/compose/data
+
+apps/web/playwright-report/
+apps/web/test-results/

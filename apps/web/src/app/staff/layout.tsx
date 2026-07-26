@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import "@/styles/console.css";
 
 export const metadata: Metadata = {
   title: "Staff Workspace",

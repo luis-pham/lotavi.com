@@ -5,11 +5,32 @@ import { getAppContext } from "../app-context.js";
 import { sendError } from "../plugins/observability.js";
 import { readStaff } from "./auth.js";
 
+function mapStaffUiStatus(status: string): TicketStatus {
+  const map: Record<string, TicketStatus> = {
+    new: "submitted",
+    accepted: "acknowledged",
+    acknowledge: "acknowledged",
+    acknowledged: "acknowledged",
+    assigned: "assigned",
+    start: "in_progress",
+    in_progress: "in_progress",
+    waiting: "needs_info",
+    needs_info: "needs_info",
+    complete: "resolved",
+    completed: "resolved",
+    resolved: "resolved",
+    reopen: "reopened",
+    reopened: "reopened",
+    cancelled: "cancelled",
+  };
+  return map[status] ?? (status as TicketStatus);
+}
+
 export async function registerStaffRoutes(app: FastifyInstance) {
   app.get("/api/v1/staff/tickets", async (req, reply) => {
     const ctx = getAppContext();
     const staff = readStaff(req);
-    if (!staff || !["staff", "manager", "property_admin"].includes(staff.role)) {
+    if (!staff || !["staff", "manager", "property_admin", "platform_admin"].includes(staff.role)) {
       return sendError(reply, req, 403, "FORBIDDEN", "Staff only");
     }
     const property = await ctx.repos.catalog.getPropertyForTenant(staff.tenantId);
@@ -28,15 +49,40 @@ export async function registerStaffRoutes(app: FastifyInstance) {
   app.patch("/api/v1/staff/tickets/:id/status", async (req, reply) => {
     const ctx = getAppContext();
     const staff = readStaff(req);
-    if (!staff || !["staff", "manager", "property_admin"].includes(staff.role)) {
+    if (!staff || !["staff", "manager", "property_admin", "platform_admin"].includes(staff.role)) {
       return sendError(reply, req, 403, "FORBIDDEN", "Staff only");
     }
     const { id } = req.params as { id: string };
-    const body = req.body as { status?: TicketStatus };
-    if (!body.status) return sendError(reply, req, 400, "VALIDATION", "status required");
+    const body = req.body as { status?: TicketStatus | string; assigneeId?: string | null; escalate?: boolean };
+    if (!body.status && body.escalate === undefined && body.assigneeId === undefined) {
+      return sendError(reply, req, 400, "VALIDATION", "status required");
+    }
     try {
+      if (body.assigneeId !== undefined || body.escalate) {
+        await getAppContext().phase0.updateTicket(
+          staff.tenantId,
+          id,
+          {
+            ...(body.assigneeId !== undefined ? { assigneeId: body.assigneeId } : {}),
+            ...(body.escalate ? { escalated: true, priority: "urgent" } : {}),
+          },
+          staff.userId,
+        );
+      }
+      if (!body.status) {
+        const item = await getAppContext().phase0.getTicket(staff.tenantId, id);
+        return item ?? sendError(reply, req, 404, "TICKET_NOT_FOUND", "Not found");
+      }
       const { normalizeTicketStatus } = await import("@lotiva/domain");
-      const to = normalizeTicketStatus(body.status);
+      const to = normalizeTicketStatus(mapStaffUiStatus(String(body.status)));
+      if (to === "acknowledged" || to === "assigned" || to === "in_progress") {
+        await getAppContext().phase0.updateTicket(
+          staff.tenantId,
+          id,
+          { assigneeId: staff.userId, unreadStaff: false },
+          staff.userId,
+        );
+      }
       const updated = await transitionTicket({
         tickets: ctx.repos.tickets,
         tenantId: staff.tenantId,
@@ -79,10 +125,36 @@ export async function registerStaffRoutes(app: FastifyInstance) {
     }
   });
 
+  app.get("/api/v1/staff/tickets/:id", async (req, reply) => {
+    const staff = readStaff(req);
+    if (!staff || !["staff", "manager", "property_admin", "platform_admin"].includes(staff.role)) {
+      return sendError(reply, req, 403, "FORBIDDEN", "Staff only");
+    }
+    const { id } = req.params as { id: string };
+    const item = await getAppContext().phase0.getTicket(staff.tenantId, id);
+    if (!item) return sendError(reply, req, 404, "TICKET_NOT_FOUND", "Not found");
+    return item;
+  });
+
+  app.post("/api/v1/staff/tickets/:id/notes", async (req, reply) => {
+    const staff = readStaff(req);
+    if (!staff || !["staff", "manager", "property_admin", "platform_admin"].includes(staff.role)) {
+      return sendError(reply, req, 403, "FORBIDDEN", "Staff only");
+    }
+    const { id } = req.params as { id: string };
+    const body = req.body as { body?: string; visibility?: string };
+    if (!body.body) return sendError(reply, req, 400, "VALIDATION", "body required");
+    return getAppContext().phase0.addTicketNote(staff.tenantId, id, {
+      authorId: staff.userId,
+      visibility: body.visibility ?? "internal",
+      body: body.body,
+    });
+  });
+
   app.post("/api/v1/staff/tickets/:id/messages", async (req, reply) => {
     const ctx = getAppContext();
     const staff = readStaff(req);
-    if (!staff || !["staff", "manager", "property_admin"].includes(staff.role)) {
+    if (!staff || !["staff", "manager", "property_admin", "platform_admin"].includes(staff.role)) {
       return sendError(reply, req, 403, "FORBIDDEN", "Staff only");
     }
     const { id } = req.params as { id: string };

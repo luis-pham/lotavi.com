@@ -24,7 +24,15 @@ import type {
 
 type Tenant = { id: string; name: string; slug: string };
 type Property = { id: string; tenantId: string; name: string };
-type Room = { id: string; tenantId: string; propertyId: string; label: string };
+type Room = {
+  id: string;
+  tenantId: string;
+  propertyId: string;
+  label: string;
+  deck?: string | null;
+  zone?: string | null;
+  active?: boolean;
+};
 
 export type MemoryDb = {
   tenants: Tenant[];
@@ -37,6 +45,9 @@ export type MemoryDb = {
     passwordHash: string;
     displayName: string;
     role: string;
+    departmentId?: string | null;
+    active?: boolean;
+    lastActiveAt?: Date | null;
   }>;
   qr: Array<{
     id: string;
@@ -47,6 +58,11 @@ export type MemoryDb = {
     activeFrom: Date;
     activeUntil: Date | null;
     revokedAt: Date | null;
+    label?: string | null;
+    qrLevel?: string;
+    journeyId?: string | null;
+    scanCount?: number;
+    lastScanAt?: Date | null;
   }>;
   guestSessions: Array<{
     id: string;
@@ -113,6 +129,11 @@ export type MemoryDb = {
     body: string;
     publishedAt: Date;
     active: boolean;
+    status?: string;
+    priority?: string;
+    expiresAt?: Date | null;
+    target?: string;
+    journeyId?: string | null;
   }>;
   pendingActions: Array<{
     id: string;
@@ -137,6 +158,15 @@ export type MemoryDb = {
     version: number;
     idempotencyKey: string;
     createdAt: Date;
+    title?: string | null;
+    priority?: string;
+    assigneeId?: string | null;
+    escalated?: boolean;
+    source?: string;
+    categoryId?: string | null;
+    journeyId?: string | null;
+    dueAt?: Date | null;
+    unreadStaff?: boolean;
   }>;
   ticketTransitions: Array<{
     id: string;
@@ -204,8 +234,10 @@ export function createMemoryDb(): MemoryDb {
         tenantId,
         email: "staff@lotiva.vn",
         passwordHash,
-        displayName: "Front Desk",
+        displayName: "Housekeeping Staff",
         role: "staff",
+        departmentId: null as string | null,
+        active: true,
       },
     ],
     qr: [
@@ -519,6 +551,15 @@ export function createMemoryRepos(db: MemoryDb): LotivaRepos {
         status: "submitted",
         version: 1,
         createdAt: new Date(),
+        title: null,
+        priority: "normal",
+        assigneeId: null,
+        escalated: false,
+        source: "guest_portal",
+        categoryId: null,
+        journeyId: null,
+        dueAt: null,
+        unreadStaff: true,
         ...input,
       });
       return { id, created: true };
@@ -534,6 +575,14 @@ export function createMemoryRepos(db: MemoryDb): LotivaRepos {
           department: t.department,
           createdAt: t.createdAt,
           guestSessionId: t.guestSessionId,
+          title: t.title ?? null,
+          priority: t.priority ?? "normal",
+          assigneeId: t.assigneeId ?? null,
+          escalated: t.escalated ?? false,
+          source: t.source ?? "guest_portal",
+          roomId: t.roomId,
+          unreadStaff: t.unreadStaff ?? true,
+          dueAt: t.dueAt ?? null,
         }));
     },
     async listForGuestSession(guestSessionId, tenantId) {
@@ -546,6 +595,14 @@ export function createMemoryRepos(db: MemoryDb): LotivaRepos {
           description: t.description,
           department: t.department,
           createdAt: t.createdAt,
+          title: t.title ?? null,
+          priority: t.priority ?? "normal",
+          assigneeId: t.assigneeId ?? null,
+          escalated: t.escalated ?? false,
+          source: t.source ?? "guest_portal",
+          roomId: t.roomId,
+          unreadStaff: t.unreadStaff ?? true,
+          dueAt: t.dueAt ?? null,
         }));
     },
     async updateStatus(id, tenantId, status) {
@@ -583,6 +640,14 @@ export function createMemoryRepos(db: MemoryDb): LotivaRepos {
         description: row.description,
         guestSessionId: row.guestSessionId,
         version: row.version,
+        title: row.title ?? null,
+        priority: row.priority ?? "normal",
+        assigneeId: row.assigneeId ?? null,
+        escalated: row.escalated ?? false,
+        source: row.source ?? "guest_portal",
+        roomId: row.roomId,
+        unreadStaff: row.unreadStaff ?? true,
+        dueAt: row.dueAt ?? null,
       };
     },
   };

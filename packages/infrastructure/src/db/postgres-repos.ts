@@ -424,6 +424,14 @@ export function createPostgresRepos(): LotivaRepos {
             department: row.department,
             createdAt: row.createdAt,
             guestSessionId: row.guestSessionId,
+            title: row.title,
+            priority: row.priority,
+            assigneeId: row.assigneeId,
+            escalated: row.escalated,
+            source: row.source,
+            roomId: row.roomId,
+            unreadStaff: row.unreadStaff,
+            dueAt: row.dueAt,
           }));
         });
       },
@@ -445,6 +453,14 @@ export function createPostgresRepos(): LotivaRepos {
             description: row.description,
             department: row.department,
             createdAt: row.createdAt,
+            title: row.title,
+            priority: row.priority,
+            assigneeId: row.assigneeId,
+            escalated: row.escalated,
+            source: row.source,
+            roomId: row.roomId,
+            unreadStaff: row.unreadStaff,
+            dueAt: row.dueAt,
           }));
         });
       },
@@ -512,6 +528,14 @@ export function createPostgresRepos(): LotivaRepos {
             description: row.description,
             guestSessionId: row.guestSessionId,
             version: row.version ?? 1,
+            title: row.title,
+            priority: row.priority,
+            assigneeId: row.assigneeId,
+            escalated: row.escalated,
+            source: row.source,
+            roomId: row.roomId,
+            unreadStaff: row.unreadStaff,
+            dueAt: row.dueAt,
           };
         });
       },

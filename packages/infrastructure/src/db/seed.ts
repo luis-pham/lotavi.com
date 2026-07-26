@@ -8,6 +8,7 @@ import {
 import { eq } from "drizzle-orm";
 import { closeDb, withBypassRls } from "./client.js";
 import * as t from "./schema.js";
+import { createPhase0Ops } from "../phase0/ops.js";
 
 async function main() {
   const existing = await withBypassRls(async (db) => {
@@ -22,12 +23,30 @@ async function main() {
       | undefined;
   }).catch(() => undefined);
 
-  if (existing?.guestQrToken) {
+  if (existing) {
+    const extras = await withBypassRls(async (db) => {
+      const roomRows = await db.select({ id: t.rooms.id }).from(t.rooms).where(eq(t.rooms.propertyId, existing.propertyId));
+      const userRows = await db.select({ id: t.users.id, role: t.users.role }).from(t.users).where(eq(t.users.tenantId, existing.tenantId));
+      return {
+        roomIds: roomRows.map((room) => room.id),
+        adminUserId: userRows.find((user) => user.role === "property_admin")?.id,
+        staffUserId: userRows.find((user) => user.role === "staff")?.id,
+      };
+    });
+    if (extras.adminUserId && extras.staffUserId) {
+      await createPhase0Ops("postgres").seedPhase0Extras(
+        existing.tenantId,
+        existing.propertyId,
+        extras.roomIds,
+        extras.adminUserId,
+        extras.staffUserId,
+      );
+    }
     console.log(
       JSON.stringify(
         {
           ...existing,
-          guestQrPath: `/g/${existing.guestQrToken}`,
+          guestQrPath: existing.guestQrToken ? `/g/${existing.guestQrToken}` : null,
           adminEmail: "admin@lotiva.vn",
           staffEmail: "staff@lotiva.vn",
           password: "admin123",
@@ -43,6 +62,9 @@ async function main() {
   const tenantId = newId();
   const propertyId = newId();
   const roomId = newId();
+  const secondRoomId = newId();
+  const adminUserId = newId();
+  const staffUserId = newId();
   const themeVersionId = newId();
   const docId = newId();
   const chunkId = newId();
@@ -67,7 +89,7 @@ async function main() {
       label: "1208",
     });
     await db.insert(t.rooms).values({
-      id: newId(),
+      id: secondRoomId,
       tenantId,
       propertyId,
       label: "1209",
@@ -76,7 +98,7 @@ async function main() {
     // Local/dev seed password — NEVER use in staging/production (ALLOW_DEMO_SEED must be false).
     const passwordHash = hashPassword(process.env.SEED_ADMIN_PASSWORD ?? "admin123");
     await db.insert(t.users).values({
-      id: newId(),
+      id: adminUserId,
       tenantId,
       email: "admin@lotiva.vn",
       passwordHash,
@@ -84,7 +106,7 @@ async function main() {
       role: "property_admin",
     });
     await db.insert(t.users).values({
-      id: newId(),
+      id: staffUserId,
       tenantId,
       email: "staff@lotiva.vn",
       passwordHash,
@@ -234,6 +256,14 @@ async function main() {
     const props = await db.select().from(t.properties).where(eq(t.properties.id, propertyId));
     if (!props.length) throw new Error("seed failed");
   });
+
+  await createPhase0Ops("postgres").seedPhase0Extras(
+    tenantId,
+    propertyId,
+    [roomId, secondRoomId],
+    adminUserId,
+    staffUserId,
+  );
 
   console.log(
     JSON.stringify(

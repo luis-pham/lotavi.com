@@ -1,49 +1,56 @@
 ---
 title: "Information Architecture"
 document_id: "UX-002"
-version: "1.0.0"
+version: "2.0.0"
 status: "approved"
 owners: ["Product", "Engineering", "Design"]
-last_updated: "2026-07-25"
+last_updated: "2026-07-26"
 depends_on: []
 source_of_truth_for: ["navigation"]
 implemented_by: []
 reviewed_by: []
 ---
 
-
-# Information architecture
+# Information architecture (Phase 0)
 
 ## Guest Portal
 - Home
-- Assistant
-- Schedule
-- Requests
-- More
-  - Announcements
-  - Property information
-  - Contact staff
-  - Language
+- Essential information
+- Quick requests
+- Active requests / status
+- Announcements
+- Explore / help
 
 ## Staff Workspace
-- Overview
-- Tickets
-- Waiting guests
-- Announcements
-- Schedules
-- Search
+- My Work
+- Department Queue
+- Guest & Cabin Lookup
+- Shift Activity
+- Handover
+- Notifications
+- Profile
 
 ## Admin Console
-- Home
-- Guest Portal
-- Content
-- Knowledge
-- Schedules
+
+### Operations
+- Overview
+- Guest Requests
+- Guests
+- Cabins
+- Journeys
 - Announcements
-- Tickets
-- Team
-- Analytics
-- AI Assistant
-- Brand
-- Settings
-- Audit
+
+### Portal
+- Portal Content
+- Request Categories
+- QR & Guest Access
+
+### Organization
+- Staff
+- Departments
+
+### System
+- Basic Settings
+
+## Explicitly out of Phase 0 navigation
+Charges, Folios, Payments, Reviews, Advanced Analytics, Full Brand Studio, Automations, Integrations, Advanced Guest Pulse.

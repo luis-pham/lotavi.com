@@ -11,6 +11,7 @@ import { registerStaffRoutes } from "./routes/staff.js";
 import { registerAdminRoutes } from "./routes/admin.js";
 import { registerVoiceRoutes } from "./routes/voice.js";
 import { registerRealtimeRoutes } from "./routes/realtime.js";
+import { registerPhase0Routes } from "./routes/phase0.js";
 
 async function main() {
   const env = loadConfig();
@@ -39,6 +40,7 @@ async function main() {
   await registerGuestRoutes(app);
   await registerStaffRoutes(app);
   await registerAdminRoutes(app);
+  await registerPhase0Routes(app);
   await registerVoiceRoutes(app);
   await registerRealtimeRoutes(app);
 
