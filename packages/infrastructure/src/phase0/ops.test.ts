@@ -56,7 +56,8 @@ describe("phase0 ops memory", () => {
     expect(note.body).toBe("On my way");
 
     const detail = await ops.getTicket(tenantId, ticket.id);
-    expect(detail?.notes?.length).toBeGreaterThanOrEqual(1);
+    const notes = (detail?.notes as unknown[] | undefined) ?? [];
+    expect(notes.length).toBeGreaterThanOrEqual(1);
 
     const handover = await ops.createHandover(scope, {
       authorId: staff.id,
@@ -92,7 +93,7 @@ describe("phase0 ops memory", () => {
     };
     db.tickets.push(ticket);
     await expect(
-      ops.updateTicket(db.seedMeta.tenantId, ticket.id, { status: "submitted" }, null),
+      ops.updateTicket(db.seedMeta.tenantId, ticket.id, { status: "submitted" }),
     ).rejects.toThrow(/Invalid ticket transition/i);
   });
 });
