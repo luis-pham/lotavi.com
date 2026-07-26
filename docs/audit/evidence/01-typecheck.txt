@@ -1,0 +1,23 @@
+=== TYPECHECK 2026-07-26T17:06:46Z ===
+Scope: 10 of 11 workspace projects
+packages/contracts typecheck$ tsc -p tsconfig.json --noEmit
+packages/design-tokens typecheck$ tsc -p tsconfig.json --noEmit
+packages/domain typecheck$ tsc -p tsconfig.json --noEmit
+packages/design-tokens typecheck: Done
+packages/domain typecheck: Done
+packages/contracts typecheck: Done
+packages/application typecheck$ tsc -p tsconfig.json --noEmit
+packages/design-system typecheck$ tsc -p tsconfig.json --noEmit
+packages/application typecheck: Done
+packages/design-system typecheck: Done
+packages/infrastructure typecheck$ tsc -p tsconfig.json --noEmit
+packages/ui typecheck$ tsc -p tsconfig.json --noEmit
+packages/infrastructure typecheck: Done
+packages/ui typecheck: Done
+apps/web typecheck$ tsc -p tsconfig.json --noEmit
+apps/api typecheck$ tsc -p tsconfig.json --noEmit
+apps/worker typecheck$ tsc -p tsconfig.json --noEmit
+apps/worker typecheck: Done
+apps/api typecheck: Done
+apps/web typecheck: Done
+EXIT:0

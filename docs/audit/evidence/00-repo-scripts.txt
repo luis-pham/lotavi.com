@@ -1,0 +1,51 @@
+=== PACKAGE SCRIPTS ===
+{
+  "build": "turbo run build",
+  "dev": "turbo run dev --parallel",
+  "lint": "turbo run lint",
+  "typecheck": "turbo run typecheck",
+  "test": "vitest run",
+  "db:generate": "pnpm --filter @lotiva/infrastructure db:generate",
+  "db:migrate": "pnpm --filter @lotiva/infrastructure db:migrate",
+  "db:seed": "pnpm --filter @lotiva/infrastructure db:seed",
+  "build:packages": "pnpm --filter @lotiva/contracts --filter @lotiva/domain --filter @lotiva/application --filter @lotiva/design-tokens --filter @lotiva/design-system --filter @lotiva/ui --filter @lotiva/infrastructure build",
+  "dev:api": "pnpm build:packages && pnpm --filter @lotiva/api dev",
+  "knowledge:reembed": "pnpm --filter @lotiva/infrastructure knowledge:reembed",
+  "format": "prettier --write ."
+}
+=== PNPM WORKSPACE ===
+packages:
+  - "apps/*"
+  - "packages/*"
+
+allowBuilds:
+  esbuild: true
+  sharp: true
+  msgpackr-extract: true
+
+confirmModulesPurge: false
+strictPeerDependencies: false
+autoInstallPeers: true
+=== TURBO ===
+{
+  "$schema": "https://turbo.build/schema.json",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", ".next/**"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "lint": {
+      "dependsOn": ["^build"]
+    },
+    "typecheck": {
+      "dependsOn": ["^build"]
+    },
+    "test": {
+      "dependsOn": ["^build"]
+    }
+  }
+}

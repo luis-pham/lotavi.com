@@ -1,0 +1,5 @@
+=== PUBLIC PROD HEALTH 2026-07-26T17:08:14Z ===
+{"status":"ok","service":"lotiva-api","version":"0.1.0"}
+admin:308
+staff:308
+{"status":"ok","checks":{"store":"postgres","postgres":"ok"},"voiceEnabled":false}

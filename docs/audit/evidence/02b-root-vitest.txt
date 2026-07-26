@@ -1,0 +1,31 @@
+=== ROOT VITEST 2026-07-26T17:07:56Z ===
+$ vitest run
+
+ RUN  v3.2.7 /Users/huypq/Documents/Projects/lotavi
+
+ ✓ apps/web/src/i18n/routes.test.ts (4 tests) 3ms
+ ✓ packages/domain/src/locale.test.ts (4 tests) 2ms
+ ✓ packages/contracts/src/voice-events.test.ts (1 test) 9ms
+ ✓ apps/web/src/middleware.test.ts (8 tests) 25ms
+ ✓ packages/infrastructure/src/rls.test.ts (1 test) 56ms
+ ✓ packages/infrastructure/src/voice/voice-heartbeat.test.ts (2 tests) 131ms
+ ✓ packages/infrastructure/src/voice/voice-session-safety.test.ts (2 tests) 141ms
+ ✓ apps/web/src/i18n/resolve-locale.test.ts (25 tests) 7ms
+ ✓ packages/application/src/tickets.test.ts (1 test) 3ms
+ ✓ packages/infrastructure/src/memory/ticket-concurrency.test.ts (2 tests) 150ms
+ ✓ packages/infrastructure/src/retrieval/eval.test.ts (1 test) 13ms
+ ✓ packages/domain/src/ticket.test.ts (5 tests) 5ms
+ ✓ packages/contracts/src/config.test.ts (14 tests) 7ms
+ ✓ packages/infrastructure/src/redis-rate-limit.test.ts (3 tests) 3ms
+ ✓ packages/infrastructure/src/voice/ephemeral-token.test.ts (2 tests) 4ms
+ ✓ packages/domain/src/vietnamese.test.ts (2 tests) 4ms
+ ✓ packages/infrastructure/src/phase0/ops.test.ts (2 tests) 124ms
+ ↓ packages/infrastructure/src/db/postgres-rls.test.ts (2 tests | 2 skipped)
+ ✓ apps/api/src/voice-contract.test.ts (2 tests) 3ms
+
+ Test Files  18 passed | 1 skipped (19)
+      Tests  81 passed | 2 skipped (83)
+   Start at  00:07:56
+   Duration  1.61s (transform 795ms, setup 0ms, collect 3.49s, tests 689ms, environment 3ms, prepare 1.62s)
+
+EXIT:0

@@ -1,0 +1,23 @@
+=== LINT 2026-07-26T17:06:53Z ===
+Scope: 10 of 11 workspace projects
+packages/contracts lint$ tsc -p tsconfig.json --noEmit
+packages/design-tokens lint$ tsc -p tsconfig.json --noEmit
+packages/domain lint$ tsc -p tsconfig.json --noEmit
+packages/domain lint: Done
+packages/design-tokens lint: Done
+packages/contracts lint: Done
+packages/application lint$ tsc -p tsconfig.json --noEmit
+packages/design-system lint$ tsc -p tsconfig.json --noEmit
+packages/design-system lint: Done
+packages/application lint: Done
+packages/infrastructure lint$ tsc -p tsconfig.json --noEmit
+packages/ui lint$ tsc -p tsconfig.json --noEmit
+packages/ui lint: Done
+packages/infrastructure lint: Done
+apps/api lint$ tsc -p tsconfig.json --noEmit
+apps/web lint$ tsc -p tsconfig.json --noEmit
+apps/worker lint$ tsc -p tsconfig.json --noEmit
+apps/worker lint: Done
+apps/web lint: Done
+apps/api lint: Done
+EXIT:0

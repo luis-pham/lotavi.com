@@ -1,0 +1,90 @@
+=== TURBO BUILD 2026-07-26T17:07:58Z ===
+$ turbo run build
+• turbo 2.10.6
+
+   • Packages in scope: @lotiva/api, @lotiva/application, @lotiva/contracts, @lotiva/design-system, @lotiva/design-tokens, @lotiva/domain, @lotiva/infrastructure, @lotiva/ui, @lotiva/web, @lotiva/worker
+   • Running build in 10 packages
+   • Remote caching disabled
+
+@lotiva/contracts:build: cache miss, executing 8c231750fec817b4
+@lotiva/domain:build: cache miss, executing 6f870bc5ae458e27
+@lotiva/design-tokens:build: cache miss, executing 34cdf5e194061c43
+@lotiva/contracts:build: $ tsc -p tsconfig.json
+@lotiva/design-tokens:build: $ tsc -p tsconfig.json
+@lotiva/domain:build: $ tsc -p tsconfig.json
+@lotiva/application:build: cache miss, executing 8fbd67b5ed1956e6
+@lotiva/design-system:build: cache miss, executing 85db8ca9ec0279c9
+@lotiva/application:build: $ tsc -p tsconfig.json
+@lotiva/design-system:build: $ tsc -p tsconfig.json
+@lotiva/infrastructure:build: cache miss, executing 204e4b4e751639e2
+@lotiva/ui:build: cache miss, executing 5d40550ad90242d3
+@lotiva/infrastructure:build: $ tsc -p tsconfig.json
+@lotiva/ui:build: $ tsc -p tsconfig.json
+@lotiva/web:build: cache miss, executing d2e51bf66e474713
+@lotiva/web:build: $ next build
+@lotiva/api:build: cache miss, executing 10480559e32d34ba
+@lotiva/worker:build: cache miss, executing 3c873f3a0ce3c4b6
+@lotiva/web:build:    ▲ Next.js 15.5.21
+@lotiva/web:build: 
+@lotiva/web:build:    Creating an optimized production build ...
+@lotiva/worker:build: $ tsc -p tsconfig.json
+@lotiva/api:build: $ tsc -p tsconfig.json
+@lotiva/web:build:  ✓ Compiled successfully in 1794ms
+@lotiva/web:build:    Linting and checking validity of types ...
+@lotiva/web:build:    Collecting page data ...
+@lotiva/web:build:    Generating static pages (0/29) ...
+@lotiva/web:build:    Generating static pages (7/29) 
+@lotiva/web:build:    Generating static pages (14/29) 
+@lotiva/web:build:    Generating static pages (21/29) 
+@lotiva/web:build:  ✓ Generating static pages (29/29)
+@lotiva/web:build:    Finalizing page optimization ...
+@lotiva/web:build:    Collecting build traces ...
+@lotiva/web:build: 
+@lotiva/web:build: Route (app)                                 Size  First Load JS
+@lotiva/web:build: ┌ ƒ /                                      134 B         102 kB
+@lotiva/web:build: ├ ƒ /_not-found                            990 B         103 kB
+@lotiva/web:build: ├ ● /[locale]                            1.01 kB         106 kB
+@lotiva/web:build: ├   ├ /vi
+@lotiva/web:build: ├   └ /en
+@lotiva/web:build: ├ ƒ /admin                               1.12 kB         103 kB
+@lotiva/web:build: ├ ƒ /admin/announcements                  2.6 kB         105 kB
+@lotiva/web:build: ├ ƒ /admin/cabins                         2.6 kB         105 kB
+@lotiva/web:build: ├ ƒ /admin/categories                     2.6 kB         105 kB
+@lotiva/web:build: ├ ƒ /admin/departments                    2.6 kB         105 kB
+@lotiva/web:build: ├ ƒ /admin/guests                         2.6 kB         105 kB
+@lotiva/web:build: ├ ƒ /admin/journeys                       2.6 kB         105 kB
+@lotiva/web:build: ├ ƒ /admin/overview                      1.51 kB         107 kB
+@lotiva/web:build: ├ ƒ /admin/portal-content                 2.6 kB         105 kB
+@lotiva/web:build: ├ ƒ /admin/qr-access                      2.6 kB         105 kB
+@lotiva/web:build: ├ ƒ /admin/requests                      3.49 kB         105 kB
+@lotiva/web:build: ├ ƒ /admin/settings                       2.6 kB         105 kB
+@lotiva/web:build: ├ ƒ /admin/staff                          2.6 kB         105 kB
+@lotiva/web:build: ├ ƒ /g/[token]                           6.77 kB         112 kB
+@lotiva/web:build: ├ ○ /robots.txt                            134 B         102 kB
+@lotiva/web:build: ├ ○ /sitemap.xml                           134 B         102 kB
+@lotiva/web:build: ├ ƒ /staff                               1.12 kB         103 kB
+@lotiva/web:build: ├ ƒ /staff/department-queue               2.6 kB         105 kB
+@lotiva/web:build: ├ ƒ /staff/handover                       2.6 kB         105 kB
+@lotiva/web:build: ├ ƒ /staff/lookup                         2.6 kB         105 kB
+@lotiva/web:build: ├ ƒ /staff/my-work                       3.14 kB         105 kB
+@lotiva/web:build: ├ ƒ /staff/notifications                  2.6 kB         105 kB
+@lotiva/web:build: ├ ƒ /staff/profile                        2.6 kB         105 kB
+@lotiva/web:build: └ ƒ /staff/shift-activity                 2.6 kB         105 kB
+@lotiva/web:build: + First Load JS shared by all             102 kB
+@lotiva/web:build:   ├ chunks/129-da6b2d98334eebb1.js       45.8 kB
+@lotiva/web:build:   ├ chunks/57c3882a-23fccf9e4f63b159.js  54.2 kB
+@lotiva/web:build:   └ other shared chunks (total)          1.93 kB
+@lotiva/web:build: 
+@lotiva/web:build: 
+@lotiva/web:build: ƒ Middleware                               35 kB
+@lotiva/web:build: 
+@lotiva/web:build: ○  (Static)   prerendered as static content
+@lotiva/web:build: ●  (SSG)      prerendered as static HTML (uses generateStaticParams)
+@lotiva/web:build: ƒ  (Dynamic)  server-rendered on demand
+@lotiva/web:build: 
+
+ Tasks:    10 successful, 10 total
+Cached:    0 cached, 10 total
+  Time:    13.627s 
+
+EXIT:0
